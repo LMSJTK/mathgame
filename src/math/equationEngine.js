@@ -59,20 +59,25 @@ function createDifficultyBreakdown({
 }
 
 function buildDistractors(answer, random = Math.random) {
+  const isDecimal = !Number.isInteger(answer);
+  const step = isDecimal ? 0.1 : 1;
+  const smallRange = isDecimal ? 0.5 : 5;
+  const largeRange = isDecimal ? 1.0 : 10;
+
   const offsets = unique([
-    -3,
-    -2,
-    -1,
-    1,
-    2,
-    3,
-    randomInt(-5, 5, random),
-    randomInt(-10, 10, random),
+    -3 * step,
+    -2 * step,
+    -1 * step,
+    1 * step,
+    2 * step,
+    3 * step,
+    randomInt(-smallRange / step, smallRange / step, random) * step,
+    randomInt(-largeRange / step, largeRange / step, random) * step,
   ]).filter(offset => offset !== 0);
 
   const distractors = [];
   for (const offset of offsets) {
-    const candidate = answer + offset;
+    const candidate = Math.round((answer + offset) * 1000) / 1000;
     if (candidate !== answer && !distractors.includes(candidate)) {
       distractors.push(candidate);
     }
@@ -80,7 +85,8 @@ function buildDistractors(answer, random = Math.random) {
   }
 
   while (distractors.length < 3) {
-    const fallback = answer + randomInt(-10, 10, random) || answer + 4;
+    const offset = randomInt(-largeRange / step, largeRange / step, random) * step;
+    const fallback = Math.round((answer + (offset || 4 * step)) * 1000) / 1000;
     if (fallback !== answer && !distractors.includes(fallback)) {
       distractors.push(fallback);
     }
@@ -231,11 +237,263 @@ function missingValueGenerator(difficulty, random) {
   };
 }
 
+function fractionsGenerator(difficulty, random) {
+  const maxDenom = difficulty === 'easy' ? 6 : difficulty === 'medium' ? 10 : 12;
+  const denomA = randomInt(2, maxDenom, random);
+  const denomB = difficulty === 'easy' ? denomA : randomInt(2, maxDenom, random);
+
+  const numA = randomInt(1, denomA - 1, random);
+  const numB = randomInt(1, denomB - 1, random);
+
+  if (denomA === denomB) {
+    const useSubtraction = difficulty !== 'easy' && random() > 0.5 && numA > numB;
+    const answerNum = useSubtraction ? numA - numB : numA + numB;
+    const op = useSubtraction ? '-' : '+';
+    const gcd = computeGcd(answerNum, denomA);
+    const simplifiedNum = answerNum / gcd;
+    const simplifiedDen = denomA / gcd;
+
+    return {
+      prompt: `${numA}/${denomA} ${op} ${numB}/${denomB} = ?`,
+      canonicalAnswer: simplifiedDen === 1 ? simplifiedNum : simplifiedNum / simplifiedDen,
+      displayAnswer: simplifiedDen === 1 ? `${simplifiedNum}` : `${simplifiedNum}/${simplifiedDen}`,
+      hintSteps: [
+        'The denominators are the same, so you can work with the numerators directly.',
+        `${op === '+' ? 'Add' : 'Subtract'} the numerators: ${numA} ${op} ${numB} = ${answerNum}.`,
+        answerNum !== simplifiedNum ? `Simplify: ${answerNum}/${denomA} = ${simplifiedNum}/${simplifiedDen}.` : 'Check if the fraction can be simplified.',
+      ],
+      metadata: { numA, denomA, numB, denomB, operator: op },
+      representation: 'fraction_bar',
+      operandCount: 2,
+      maxMagnitude: Math.max(denomA, answerNum),
+      hasNegative: false,
+      tags: ['arithmetic', 'fractions'],
+      subskill: useSubtraction ? 'fraction_subtraction_like_denom' : 'fraction_addition_like_denom',
+    };
+  }
+
+  const lcd = lcm(denomA, denomB);
+  const scaledA = numA * (lcd / denomA);
+  const scaledB = numB * (lcd / denomB);
+  const answerNum = scaledA + scaledB;
+  const gcd = computeGcd(answerNum, lcd);
+  const simplifiedNum = answerNum / gcd;
+  const simplifiedDen = lcd / gcd;
+
+  return {
+    prompt: `${numA}/${denomA} + ${numB}/${denomB} = ?`,
+    canonicalAnswer: simplifiedDen === 1 ? simplifiedNum : simplifiedNum / simplifiedDen,
+    displayAnswer: simplifiedDen === 1 ? `${simplifiedNum}` : `${simplifiedNum}/${simplifiedDen}`,
+    hintSteps: [
+      `Find the least common denominator of ${denomA} and ${denomB}: it is ${lcd}.`,
+      `Rewrite as ${scaledA}/${lcd} + ${scaledB}/${lcd}.`,
+      `Add numerators: ${scaledA} + ${scaledB} = ${answerNum}. Simplify if possible.`,
+    ],
+    metadata: { numA, denomA, numB, denomB, lcd },
+    representation: 'fraction_bar',
+    operandCount: 2,
+    maxMagnitude: lcd,
+    hasNegative: false,
+    tags: ['arithmetic', 'fractions'],
+    subskill: 'fraction_addition_unlike_denom',
+  };
+}
+
+function computeGcd(a, b) {
+  a = Math.abs(a);
+  b = Math.abs(b);
+  while (b) { [a, b] = [b, a % b]; }
+  return a;
+}
+
+function lcm(a, b) {
+  return Math.abs(a * b) / computeGcd(a, b);
+}
+
+function decimalsGenerator(difficulty, random) {
+  const places = difficulty === 'easy' ? 1 : 2;
+  const scale = 10 ** places;
+  const maxVal = difficulty === 'easy' ? 10 : difficulty === 'medium' ? 50 : 100;
+
+  const a = randomInt(1, maxVal * scale, random) / scale;
+  const b = randomInt(1, maxVal * scale, random) / scale;
+  const useSubtraction = difficulty !== 'easy' && random() > 0.5;
+
+  const rawAnswer = useSubtraction ? a - b : a + b;
+  const answer = Math.round(rawAnswer * scale) / scale;
+  const op = useSubtraction ? '-' : '+';
+
+  const aStr = a.toFixed(places);
+  const bStr = b.toFixed(places);
+
+  return {
+    prompt: `${aStr} ${op} ${bStr} = ?`,
+    canonicalAnswer: answer,
+    hintSteps: [
+      'Line up the decimal points before computing.',
+      `${op === '+' ? 'Add' : 'Subtract'} column by column from right to left.`,
+      `The answer has ${places} decimal place${places > 1 ? 's' : ''}.`,
+    ],
+    metadata: { a, b, operator: op, decimalPlaces: places },
+    representation: 'numeric',
+    operandCount: 2,
+    maxMagnitude: Math.max(Math.abs(a), Math.abs(b), Math.abs(answer)),
+    hasNegative: answer < 0,
+    tags: ['arithmetic', 'decimals'],
+    subskill: useSubtraction ? 'decimal_subtraction' : 'decimal_addition',
+  };
+}
+
+function orderOfOperationsGenerator(difficulty, random) {
+  if (difficulty === 'easy') {
+    const a = randomInt(1, 10, random);
+    const b = randomInt(1, 6, random);
+    const c = randomInt(1, 10, random);
+    const answer = a + b * c;
+    return {
+      prompt: `${a} + ${b} × ${c} = ?`,
+      canonicalAnswer: answer,
+      hintSteps: [
+        'Multiplication comes before addition.',
+        `First compute ${b} × ${c} = ${b * c}.`,
+        `Then add ${a} + ${b * c} = ${answer}.`,
+      ],
+      metadata: { expression: [a, '+', b, '×', c] },
+      representation: 'numeric',
+      operandCount: 3,
+      maxMagnitude: Math.max(a, b * c, answer),
+      hasNegative: false,
+      tags: ['arithmetic', 'reasoning'],
+      subskill: 'pemdas_multiply_before_add',
+    };
+  }
+
+  if (difficulty === 'medium') {
+    const a = randomInt(2, 10, random);
+    const b = randomInt(1, 8, random);
+    const c = randomInt(1, 6, random);
+    const inner = a + b;
+    const answer = inner * c;
+    return {
+      prompt: `(${a} + ${b}) × ${c} = ?`,
+      canonicalAnswer: answer,
+      hintSteps: [
+        'Parentheses first.',
+        `Compute ${a} + ${b} = ${inner}.`,
+        `Then ${inner} × ${c} = ${answer}.`,
+      ],
+      metadata: { expression: ['(', a, '+', b, ')', '×', c] },
+      representation: 'numeric',
+      operandCount: 3,
+      maxMagnitude: answer,
+      hasNegative: false,
+      tags: ['arithmetic', 'reasoning'],
+      subskill: 'pemdas_parentheses',
+    };
+  }
+
+  // hard
+  const a = randomInt(2, 8, random);
+  const b = randomInt(1, 5, random);
+  const exp = randomInt(2, 3, random);
+  const c = randomInt(1, 10, random);
+  const powered = a ** exp;
+  const answer = powered - b + c;
+  return {
+    prompt: `${a}^${exp} - ${b} + ${c} = ?`,
+    canonicalAnswer: answer,
+    hintSteps: [
+      'Exponents first.',
+      `Compute ${a}^${exp} = ${powered}.`,
+      `Then ${powered} - ${b} + ${c} = ${answer}.`,
+    ],
+    metadata: { expression: [a, '^', exp, '-', b, '+', c] },
+    representation: 'numeric',
+    operandCount: 4,
+    maxMagnitude: Math.max(powered, answer),
+    hasNegative: answer < 0,
+    tags: ['arithmetic', 'reasoning'],
+    subskill: 'pemdas_exponents_mixed',
+  };
+}
+
+function exponentsGenerator(difficulty, random) {
+  if (difficulty === 'easy') {
+    const base = randomInt(2, 6, random);
+    const answer = base * base;
+    return {
+      prompt: `${base}² = ?`,
+      canonicalAnswer: answer,
+      hintSteps: [
+        `${base}² means ${base} × ${base}.`,
+        `Multiply: ${base} × ${base} = ${answer}.`,
+      ],
+      metadata: { base, exponent: 2 },
+      representation: 'area_model',
+      operandCount: 1,
+      maxMagnitude: answer,
+      hasNegative: false,
+      tags: ['pre-algebra', 'exponents'],
+      subskill: 'perfect_squares',
+    };
+  }
+
+  if (difficulty === 'medium') {
+    const base = randomInt(2, 5, random);
+    const exp = randomInt(2, 3, random);
+    const answer = base ** exp;
+    return {
+      prompt: `${base}^${exp} = ?`,
+      canonicalAnswer: answer,
+      hintSteps: [
+        `${base}^${exp} means ${Array.from({ length: exp }, () => base).join(' × ')}.`,
+        `Compute step by step to get ${answer}.`,
+      ],
+      metadata: { base, exponent: exp },
+      representation: 'numeric',
+      operandCount: 1,
+      maxMagnitude: answer,
+      hasNegative: false,
+      tags: ['pre-algebra', 'exponents'],
+      subskill: 'integer_exponents',
+    };
+  }
+
+  // hard: compare or combine exponents
+  const base = randomInt(2, 4, random);
+  const expA = randomInt(2, 3, random);
+  const expB = randomInt(2, 3, random);
+  const valA = base ** expA;
+  const valB = base ** expB;
+  const answer = valA * valB;
+  const combinedExp = expA + expB;
+  return {
+    prompt: `${base}^${expA} × ${base}^${expB} = ?`,
+    canonicalAnswer: answer,
+    hintSteps: [
+      'When multiplying powers with the same base, add the exponents.',
+      `${base}^${expA} × ${base}^${expB} = ${base}^${combinedExp}.`,
+      `Compute ${base}^${combinedExp} = ${answer}.`,
+    ],
+    metadata: { base, expA, expB, combinedExp },
+    representation: 'numeric',
+    operandCount: 2,
+    maxMagnitude: answer,
+    hasNegative: false,
+    tags: ['pre-algebra', 'exponents'],
+    subskill: 'exponent_multiplication_rule',
+  };
+}
+
 const GENERATORS = {
   addition_subtraction: additionSubtractionGenerator,
   multiplication_division: multiplicationDivisionGenerator,
   signed_integers: signedIntegerGenerator,
   missing_value_equations: missingValueGenerator,
+  fractions: fractionsGenerator,
+  decimals: decimalsGenerator,
+  order_of_operations: orderOfOperationsGenerator,
+  exponents: exponentsGenerator,
 };
 
 export function listSkillFamilies() {

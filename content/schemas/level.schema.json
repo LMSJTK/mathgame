@@ -1,0 +1,272 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mathgame.local/schemas/level.schema.json",
+  "title": "Level",
+  "type": "object",
+  "required": ["id", "name", "scene", "physicsTiles", "entities", "mathEncounters"],
+  "properties": {
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "difficulty": {
+      "type": "string",
+      "enum": ["easy", "medium", "hard"]
+    },
+    "scene": {
+      "type": "object",
+      "required": ["width", "height", "tileSize"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "tileSize": { "type": "integer", "minimum": 8 },
+        "gravity": { "type": "number", "default": 800 },
+        "background": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "layers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["background", "foreground", "parallax"]
+          },
+          "assetRef": { "type": "string" },
+          "scrollFactor": {
+            "type": "object",
+            "properties": {
+              "x": { "type": "number" },
+              "y": { "type": "number" }
+            }
+          },
+          "depth": { "type": "integer" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "physicsTiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["x", "y", "w", "h"],
+        "properties": {
+          "x": { "type": "number" },
+          "y": { "type": "number" },
+          "w": { "type": "number", "minimum": 1 },
+          "h": { "type": "number", "minimum": 1 },
+          "type": {
+            "type": "string",
+            "enum": ["solid", "one_way", "hazard", "ice", "conveyor"],
+            "default": "solid"
+          },
+          "assetRef": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "x", "y"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": [
+              "player_spawn",
+              "checkpoint",
+              "exit",
+              "npc",
+              "collectible",
+              "enemy",
+              "moving_platform",
+              "equation_zone"
+            ]
+          },
+          "x": { "type": "number" },
+          "y": { "type": "number" },
+          "properties": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "assetRef": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "triggers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "condition", "actions"],
+        "properties": {
+          "id": { "type": "string" },
+          "condition": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "on_enter_region",
+                  "on_level_start",
+                  "on_checkpoint",
+                  "on_correct_streak",
+                  "on_wrong_answer",
+                  "on_item_collected",
+                  "on_encounter_complete",
+                  "on_all_encounters_complete"
+                ]
+              },
+              "params": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            },
+            "additionalProperties": false
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["type"],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "play_dialogue",
+                    "play_sound",
+                    "play_music",
+                    "show_text",
+                    "spawn_entity",
+                    "remove_entity",
+                    "move_camera",
+                    "unlock_path",
+                    "set_flag",
+                    "start_encounter"
+                  ]
+                },
+                "params": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "once": { "type": "boolean", "default": true }
+        },
+        "additionalProperties": false
+      }
+    },
+    "mathEncounters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "encounterType", "skill", "difficulty"],
+        "properties": {
+          "id": { "type": "string" },
+          "encounterType": {
+            "type": "string",
+            "enum": [
+              "target_select",
+              "range_landing",
+              "bridge_build",
+              "route_logic",
+              "sequence_repair",
+              "gate_unlock"
+            ]
+          },
+          "skill": { "type": "string" },
+          "difficulty": { "type": "string" },
+          "successTarget": { "type": "integer", "minimum": 1, "default": 1 },
+          "failureLimit": { "type": "integer", "minimum": 1, "default": 3 },
+          "linkedEntityId": { "type": "string" },
+          "reward": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string" },
+              "amount": { "type": "number" }
+            },
+            "additionalProperties": true
+          },
+          "remediation": {
+            "type": "object",
+            "properties": {
+              "onFailure": { "type": "string" }
+            },
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "dialogue": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "speaker", "lines"],
+        "properties": {
+          "id": { "type": "string" },
+          "speaker": { "type": "string" },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["text"],
+              "properties": {
+                "text": { "type": "string" },
+                "voiceAssetRef": { "type": "string" },
+                "duration": { "type": "number" },
+                "emotion": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "audio": {
+      "type": "object",
+      "properties": {
+        "backgroundMusic": { "type": "string" },
+        "ambience": { "type": "string" },
+        "soundEffects": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "rewards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "amount"],
+        "properties": {
+          "type": { "type": "string" },
+          "amount": { "type": "number" },
+          "condition": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "difficultyProfile": {
+      "type": "object",
+      "properties": {
+        "adaptive": { "type": "boolean", "default": false },
+        "minDifficulty": { "type": "string" },
+        "maxDifficulty": { "type": "string" },
+        "escalationRate": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}

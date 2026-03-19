@@ -19,6 +19,26 @@ export const SKILL_FAMILIES = {
     representations: ['numeric', 'balance-model'],
     tags: ['pre-algebra', 'equations'],
   },
+  fractions: {
+    label: 'Fractions',
+    representations: ['numeric', 'fraction_bar', 'pie_model'],
+    tags: ['arithmetic', 'fractions'],
+  },
+  decimals: {
+    label: 'Decimals',
+    representations: ['numeric', 'number_line', 'place_value_chart'],
+    tags: ['arithmetic', 'decimals'],
+  },
+  order_of_operations: {
+    label: 'Order of Operations',
+    representations: ['numeric'],
+    tags: ['arithmetic', 'reasoning'],
+  },
+  exponents: {
+    label: 'Exponents',
+    representations: ['numeric', 'area_model'],
+    tags: ['pre-algebra', 'exponents'],
+  },
 };
 
 export const DIFFICULTY_PRESETS = {

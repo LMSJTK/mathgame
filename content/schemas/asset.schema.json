@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mathgame.local/schemas/asset.schema.json",
+  "title": "Asset Record",
+  "type": "object",
+  "required": ["id", "name", "category", "state", "imagePath"],
+  "properties": {
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "category": {
+      "type": "string",
+      "enum": ["background", "foreground", "tile", "character", "ui", "portrait", "text_panel", "fx", "prop"]
+    },
+    "state": {
+      "type": "string",
+      "enum": ["draft", "review", "approved", "deprecated"]
+    },
+    "imagePath": { "type": "string" },
+    "anchor_x": { "type": "number", "minimum": 0, "maximum": 1 },
+    "anchor_y": { "type": "number", "minimum": 0, "maximum": 1 },
+    "width": { "type": "integer", "minimum": 1 },
+    "height": { "type": "integer", "minimum": 1 },
+    "packId": { "type": "string" },
+    "variantLabel": { "type": "string" },
+    "animations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "frames", "frameRate", "loop"],
+        "properties": {
+          "name": { "type": "string" },
+          "frames": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+          "frameRate": { "type": "number", "minimum": 1 },
+          "loop": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "nineSlice": {
+      "type": "object",
+      "required": ["top", "right", "bottom", "left"],
+      "properties": {
+        "top": { "type": "number", "minimum": 0 },
+        "right": { "type": "number", "minimum": 0 },
+        "bottom": { "type": "number", "minimum": 0 },
+        "left": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "characterId": { "type": "string" },
+    "expression": { "type": "string" },
+    "collisionBox": {
+      "type": "object",
+      "required": ["x", "y", "w", "h"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "w": { "type": "number", "minimum": 0 },
+        "h": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "scrollFactor": {
+      "type": "object",
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "depth": { "type": "integer" },
+    "prompt": { "type": "string" },
+    "model": { "type": "string" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": true
+}

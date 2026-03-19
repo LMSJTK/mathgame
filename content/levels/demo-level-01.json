@@ -1,0 +1,206 @@
+{
+  "id": "demo-level-01",
+  "name": "Number Forest",
+  "description": "A beginner-friendly forest level introducing addition and subtraction through platforming.",
+  "difficulty": "easy",
+  "scene": {
+    "width": 60,
+    "height": 20,
+    "tileSize": 32,
+    "gravity": 800,
+    "background": "forest_bg_01"
+  },
+  "layers": [
+    {
+      "id": "sky",
+      "type": "background",
+      "assetRef": "forest_sky",
+      "scrollFactor": { "x": 0.1, "y": 0.05 },
+      "depth": -10
+    },
+    {
+      "id": "mountains",
+      "type": "parallax",
+      "assetRef": "forest_mountains",
+      "scrollFactor": { "x": 0.3, "y": 0.1 },
+      "depth": -5
+    },
+    {
+      "id": "trees_front",
+      "type": "foreground",
+      "assetRef": "forest_trees_fg",
+      "scrollFactor": { "x": 1.2, "y": 1 },
+      "depth": 10
+    }
+  ],
+  "physicsTiles": [
+    { "x": 0, "y": 608, "w": 1920, "h": 32, "type": "solid" },
+    { "x": 200, "y": 508, "w": 128, "h": 16, "type": "solid" },
+    { "x": 400, "y": 428, "w": 96, "h": 16, "type": "solid" },
+    { "x": 580, "y": 468, "w": 128, "h": 16, "type": "solid" },
+    { "x": 780, "y": 388, "w": 96, "h": 16, "type": "solid" },
+    { "x": 960, "y": 448, "w": 128, "h": 16, "type": "solid" },
+    { "x": 1150, "y": 368, "w": 96, "h": 16, "type": "solid" },
+    { "x": 1350, "y": 508, "w": 128, "h": 16, "type": "solid" },
+    { "x": 700, "y": 608, "w": 64, "h": 32, "type": "hazard" },
+    { "x": 1100, "y": 608, "w": 48, "h": 32, "type": "hazard" }
+  ],
+  "entities": [
+    { "id": "spawn", "type": "player_spawn", "x": 64, "y": 576 },
+    { "id": "cp1", "type": "checkpoint", "x": 500, "y": 608 },
+    { "id": "cp2", "type": "checkpoint", "x": 1000, "y": 608 },
+    { "id": "exit", "type": "exit", "x": 1800, "y": 576 },
+    {
+      "id": "eq_zone_1",
+      "type": "equation_zone",
+      "x": 260,
+      "y": 480,
+      "properties": { "width": 80, "height": 80, "encounterId": "enc_addition" }
+    },
+    {
+      "id": "eq_zone_2",
+      "type": "equation_zone",
+      "x": 830,
+      "y": 360,
+      "properties": { "width": 80, "height": 80, "encounterId": "enc_subtraction" }
+    },
+    {
+      "id": "eq_zone_3",
+      "type": "equation_zone",
+      "x": 1200,
+      "y": 340,
+      "properties": { "width": 80, "height": 80, "encounterId": "enc_mixed" }
+    },
+    {
+      "id": "coin_1",
+      "type": "collectible",
+      "x": 450,
+      "y": 400,
+      "properties": { "value": 5 }
+    },
+    {
+      "id": "coin_2",
+      "type": "collectible",
+      "x": 640,
+      "y": 440,
+      "properties": { "value": 5 }
+    }
+  ],
+  "triggers": [
+    {
+      "id": "welcome_trigger",
+      "condition": { "type": "on_level_start" },
+      "actions": [
+        { "type": "play_music", "params": { "track": "forest_theme", "volume": 0.6 } },
+        { "type": "play_dialogue", "params": { "dialogueId": "dlg_welcome" } }
+      ],
+      "once": true
+    },
+    {
+      "id": "first_equation_hint",
+      "condition": {
+        "type": "on_enter_region",
+        "params": { "x": 200, "y": 440, "w": 160, "h": 120 }
+      },
+      "actions": [
+        { "type": "show_text", "params": { "text": "Step into the glowing zone to solve an equation!" } }
+      ],
+      "once": true
+    },
+    {
+      "id": "streak_encouragement",
+      "condition": {
+        "type": "on_correct_streak",
+        "params": { "count": 3 }
+      },
+      "actions": [
+        { "type": "play_sound", "params": { "sfx": "fanfare_short" } },
+        { "type": "show_text", "params": { "text": "Amazing streak! Keep going!" } }
+      ],
+      "once": false
+    },
+    {
+      "id": "all_done",
+      "condition": { "type": "on_all_encounters_complete" },
+      "actions": [
+        { "type": "unlock_path", "params": { "entityId": "exit" } },
+        { "type": "play_dialogue", "params": { "dialogueId": "dlg_allclear" } }
+      ],
+      "once": true
+    }
+  ],
+  "mathEncounters": [
+    {
+      "id": "enc_addition",
+      "encounterType": "gate_unlock",
+      "skill": "addition_subtraction",
+      "difficulty": "easy",
+      "successTarget": 1,
+      "failureLimit": 3,
+      "linkedEntityId": "eq_zone_1",
+      "reward": { "type": "progress", "amount": 1 },
+      "remediation": { "onFailure": "show_hint_then_retry" }
+    },
+    {
+      "id": "enc_subtraction",
+      "encounterType": "gate_unlock",
+      "skill": "addition_subtraction",
+      "difficulty": "medium",
+      "successTarget": 2,
+      "failureLimit": 3,
+      "linkedEntityId": "eq_zone_2",
+      "reward": { "type": "progress", "amount": 1 },
+      "remediation": { "onFailure": "show_hint_then_retry" }
+    },
+    {
+      "id": "enc_mixed",
+      "encounterType": "gate_unlock",
+      "skill": "multiplication_division",
+      "difficulty": "easy",
+      "successTarget": 1,
+      "failureLimit": 3,
+      "linkedEntityId": "eq_zone_3",
+      "reward": { "type": "progress", "amount": 1 },
+      "remediation": { "onFailure": "show_hint_then_retry" }
+    }
+  ],
+  "dialogue": [
+    {
+      "id": "dlg_welcome",
+      "speaker": "Professor Pi",
+      "lines": [
+        { "text": "Welcome to the Number Forest!", "emotion": "happy", "duration": 2.5 },
+        { "text": "Solve equations to clear the path ahead.", "emotion": "neutral", "duration": 3.0 },
+        { "text": "Use arrow keys to move and jump. Good luck!", "emotion": "celebrating", "duration": 2.5 }
+      ]
+    },
+    {
+      "id": "dlg_allclear",
+      "speaker": "Professor Pi",
+      "lines": [
+        { "text": "You solved them all! The exit is open.", "emotion": "celebrating", "duration": 3.0 }
+      ]
+    }
+  ],
+  "audio": {
+    "backgroundMusic": "forest_theme",
+    "ambience": "birds_wind",
+    "soundEffects": {
+      "correct": "sfx_correct",
+      "wrong": "sfx_wrong",
+      "checkpoint": "sfx_checkpoint",
+      "jump": "sfx_jump"
+    }
+  },
+  "rewards": [
+    { "type": "star", "amount": 1, "condition": "complete_level" },
+    { "type": "star", "amount": 1, "condition": "no_wrong_answers" },
+    { "type": "star", "amount": 1, "condition": "collect_all_items" }
+  ],
+  "difficultyProfile": {
+    "adaptive": true,
+    "minDifficulty": "easy",
+    "maxDifficulty": "medium",
+    "escalationRate": 0.3
+  }
+}
