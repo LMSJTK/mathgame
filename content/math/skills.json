@@ -23,6 +23,30 @@
       "label": "Missing Value Equations",
       "tags": ["pre-algebra", "equations"],
       "representations": ["numeric", "balance-model"]
+    },
+    {
+      "id": "fractions",
+      "label": "Fractions",
+      "tags": ["arithmetic", "fractions"],
+      "representations": ["numeric", "fraction_bar", "pie_model"]
+    },
+    {
+      "id": "decimals",
+      "label": "Decimals",
+      "tags": ["arithmetic", "decimals"],
+      "representations": ["numeric", "number_line", "place_value_chart"]
+    },
+    {
+      "id": "order_of_operations",
+      "label": "Order of Operations",
+      "tags": ["arithmetic", "reasoning"],
+      "representations": ["numeric"]
+    },
+    {
+      "id": "exponents",
+      "label": "Exponents",
+      "tags": ["pre-algebra", "exponents"],
+      "representations": ["numeric", "area_model"]
     }
   ]
 }

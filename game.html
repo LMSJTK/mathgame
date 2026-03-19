@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Math Game</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(180deg, #0d1730 0%, #08111f 100%);
+        font-family: Inter, system-ui, sans-serif;
+        color: #eef6ff;
+      }
+      h1 {
+        margin-bottom: 0.5rem;
+        color: #6ed4ff;
+        font-size: 1.5rem;
+      }
+      p { color: #9eb8d4; font-size: 0.85rem; margin-bottom: 1rem; }
+      #game-container {
+        border: 1px solid rgba(128, 173, 255, 0.24);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.3);
+      }
+      .controls-hint {
+        margin-top: 1rem;
+        color: #9eb8d4;
+        font-size: 0.75rem;
+      }
+      a { color: #6ed4ff; }
+    </style>
+  </head>
+  <body>
+    <h1>Math Game — Phaser Runtime</h1>
+    <p>Three playable encounter modes. <a href="index.html">Back to original prototype</a></p>
+    <div id="game-container"></div>
+    <p class="controls-hint">Arrow keys or WASD to move. Space to jump. Click to select answers.</p>
+
+    <script src="./node_modules/phaser/dist/phaser.min.js"></script>
+    <script type="module">
+      import { createGame } from './src/runtime/engine/index.js';
+      createGame('game-container');
+    </script>
+  </body>
+</html>
