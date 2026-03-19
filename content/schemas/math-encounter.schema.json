@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mathgame.local/schemas/math-encounter.schema.json",
+  "title": "Math Encounter",
+  "type": "object",
+  "required": [
+    "id",
+    "encounterType",
+    "skill",
+    "difficulty",
+    "successTarget",
+    "failureLimit",
+    "reward",
+    "remediation"
+  ],
+  "properties": {
+    "id": { "type": "string" },
+    "encounterType": { "type": "string" },
+    "skill": { "type": "string" },
+    "difficulty": { "type": "string" },
+    "successTarget": { "type": "number", "minimum": 1 },
+    "failureLimit": { "type": "number", "minimum": 1 },
+    "reward": {
+      "type": "object",
+      "required": ["type", "amount"],
+      "properties": {
+        "type": { "type": "string" },
+        "amount": { "type": "number" }
+      },
+      "additionalProperties": true
+    },
+    "remediation": {
+      "type": "object",
+      "required": ["onFailure"],
+      "properties": {
+        "onFailure": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Math Game Prototype</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell" data-game-app>
+      <section class="hud-card">
+        <div>
+          <p class="eyebrow">Prototype Runtime</p>
+          <h1>Target Selection Encounter</h1>
+          <p class="subtitle">A first playable slice that consumes the shared equation engine.</p>
+        </div>
+        <div class="hud-grid">
+          <div><span class="label">Equation</span><strong data-equation>—</strong></div>
+          <div><span class="label">Skill</span><strong data-skill>—</strong></div>
+          <div><span class="label">Difficulty</span><strong data-difficulty>—</strong></div>
+          <div><span class="label">Encounter</span><strong data-encounter>—</strong></div>
+          <div><span class="label">Score</span><strong data-score>0</strong></div>
+          <div><span class="label">Streak</span><strong data-streak>0</strong></div>
+        </div>
+        <div class="controls">
+          <button type="button" data-show-hint>Show Hint</button>
+          <button type="button" data-next-equation>Skip / Next Equation</button>
+        </div>
+        <p class="feedback" data-feedback>Pick the moving target that matches the equation.</p>
+        <p class="hint" data-hint>Press “Show Hint” if you want help.</p>
+      </section>
+
+      <section class="arena-card">
+        <div class="arena-header">
+          <h2>Play Area</h2>
+          <p>Click the correct moving answer before you lose your streak.</p>
+        </div>
+        <div class="arena" data-choices></div>
+      </section>
+    </main>
+
+    <script type="module" src="./src/runtime/main.js"></script>
+  </body>
+</html>
