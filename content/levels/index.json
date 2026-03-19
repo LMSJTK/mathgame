@@ -1,0 +1,9 @@
+[
+  {
+    "id": "demo-level-01",
+    "name": "Number Forest",
+    "difficulty": "easy",
+    "description": "A beginner-friendly forest level introducing addition and subtraction.",
+    "file": "demo-level-01.json"
+  }
+]
