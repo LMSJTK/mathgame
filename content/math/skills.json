@@ -1,0 +1,28 @@
+{
+  "skills": [
+    {
+      "id": "addition_subtraction",
+      "label": "Addition & Subtraction",
+      "tags": ["arithmetic", "fact-fluency"],
+      "representations": ["numeric", "number_line"]
+    },
+    {
+      "id": "multiplication_division",
+      "label": "Multiplication & Division",
+      "tags": ["arithmetic", "fact-fluency"],
+      "representations": ["numeric", "array_model"]
+    },
+    {
+      "id": "signed_integers",
+      "label": "Signed Integers",
+      "tags": ["pre-algebra", "integer-sense"],
+      "representations": ["numeric", "number_line"]
+    },
+    {
+      "id": "missing_value_equations",
+      "label": "Missing Value Equations",
+      "tags": ["pre-algebra", "equations"],
+      "representations": ["numeric", "balance-model"]
+    }
+  ]
+}
