@@ -1,0 +1,6 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+mathgame_research.pdf
+mathgame_plan.md
