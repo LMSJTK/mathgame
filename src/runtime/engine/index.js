@@ -3,6 +3,9 @@ import MenuScene from './MenuScene.js';
 import HudScene from './HudScene.js';
 import TargetSelectScene from './TargetSelectScene.js';
 import RangeLandingScene from './RangeLandingScene.js';
+import BridgeBuildScene from './BridgeBuildScene.js';
+import RouteLogicScene from './RouteLogicScene.js';
+import SequenceRepairScene from './SequenceRepairScene.js';
 import PlatformerScene from './PlatformerScene.js';
 
 export function createGame(parentElement) {
@@ -23,7 +26,11 @@ export function createGame(parentElement) {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    scene: [BootScene, MenuScene, HudScene, TargetSelectScene, RangeLandingScene, PlatformerScene],
+    scene: [
+      BootScene, MenuScene, HudScene,
+      TargetSelectScene, RangeLandingScene, BridgeBuildScene,
+      RouteLogicScene, SequenceRepairScene, PlatformerScene,
+    ],
   };
 
   return new Phaser.Game(config);

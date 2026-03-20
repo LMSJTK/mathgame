@@ -30,12 +30,15 @@ export default class MenuScene extends Phaser.Scene {
     const modes = [
       { action: () => this.scene.start('TargetSelectScene'), label: 'Target Selection', desc: 'Click the correct moving answer' },
       { action: () => this.scene.start('RangeLandingScene'), label: 'Range Landing', desc: 'Jump to the platform with the right answer' },
+      { action: () => this.scene.start('BridgeBuildScene'), label: 'Bridge Build', desc: 'Combine number tiles to reach a target sum' },
+      { action: () => this.scene.start('RouteLogicScene'), label: 'Route Logic', desc: 'Guide a number through operation gates' },
+      { action: () => this.scene.start('SequenceRepairScene'), label: 'Sequence Repair', desc: 'Fill in missing numbers to complete a pattern' },
       { action: () => this.showLevelSelect(), label: 'Play a Level', desc: 'Platformer levels with equation zones and dialogue' },
       { action: () => this.scene.start('PlatformerScene', { level: null }), label: 'Quick Demo Level', desc: 'Auto-generated demo (no JSON loading)' },
     ];
 
     modes.forEach((mode, i) => {
-      this.createButton(cx, 180 + i * 76, 380, 58, mode.label, mode.desc, mode.action);
+      this.createButton(cx, 160 + i * 56, 400, 42, mode.label, mode.desc, mode.action);
     });
   }
 

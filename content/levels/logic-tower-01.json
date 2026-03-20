@@ -1,0 +1,219 @@
+{
+  "id": "logic-tower-01",
+  "name": "Logic Tower",
+  "description": "A vertical tower climb featuring bridge builds, route logic, and sequence repair encounters.",
+  "difficulty": "medium",
+  "scene": {
+    "width": 40,
+    "height": 30,
+    "tileSize": 32,
+    "gravity": 800,
+    "background": "tower_bg_01"
+  },
+  "layers": [
+    {
+      "id": "sky",
+      "type": "background",
+      "assetRef": "tower_sky",
+      "scrollFactor": { "x": 0.05, "y": 0.05 },
+      "depth": -10
+    },
+    {
+      "id": "clouds",
+      "type": "parallax",
+      "assetRef": "tower_clouds",
+      "scrollFactor": { "x": 0.2, "y": 0.1 },
+      "depth": -5
+    }
+  ],
+  "physicsTiles": [
+    { "x": 0, "y": 928, "w": 1280, "h": 32, "type": "solid" },
+
+    { "x": 100, "y": 828, "w": 160, "h": 16, "type": "solid" },
+    { "x": 350, "y": 748, "w": 128, "h": 16, "type": "solid" },
+    { "x": 550, "y": 668, "w": 160, "h": 16, "type": "solid" },
+
+    { "x": 200, "y": 568, "w": 128, "h": 16, "type": "solid" },
+    { "x": 450, "y": 488, "w": 160, "h": 16, "type": "solid" },
+    { "x": 700, "y": 408, "w": 128, "h": 16, "type": "solid" },
+
+    { "x": 350, "y": 328, "w": 160, "h": 16, "type": "solid" },
+    { "x": 600, "y": 248, "w": 128, "h": 16, "type": "solid" },
+    { "x": 900, "y": 168, "w": 160, "h": 16, "type": "solid" },
+
+    { "x": 480, "y": 828, "w": 48, "h": 32, "type": "hazard" },
+    { "x": 350, "y": 408, "w": 48, "h": 32, "type": "hazard" }
+  ],
+  "entities": [
+    { "id": "spawn", "type": "player_spawn", "x": 64, "y": 896 },
+    { "id": "cp1", "type": "checkpoint", "x": 560, "y": 668 },
+    { "id": "cp2", "type": "checkpoint", "x": 450, "y": 488 },
+    { "id": "exit", "type": "exit", "x": 960, "y": 136 },
+
+    {
+      "id": "eq_bridge",
+      "type": "equation_zone",
+      "x": 160,
+      "y": 800,
+      "properties": { "width": 100, "height": 80, "encounterId": "enc_bridge" }
+    },
+    {
+      "id": "eq_route",
+      "type": "equation_zone",
+      "x": 500,
+      "y": 460,
+      "properties": { "width": 100, "height": 80, "encounterId": "enc_route" }
+    },
+    {
+      "id": "eq_sequence",
+      "type": "equation_zone",
+      "x": 650,
+      "y": 220,
+      "properties": { "width": 100, "height": 80, "encounterId": "enc_sequence" }
+    },
+    {
+      "id": "eq_gate",
+      "type": "equation_zone",
+      "x": 400,
+      "y": 300,
+      "properties": { "width": 80, "height": 80, "encounterId": "enc_gate" }
+    },
+
+    { "id": "coin_1", "type": "collectible", "x": 380, "y": 720, "properties": { "value": 5 } },
+    { "id": "coin_2", "type": "collectible", "x": 230, "y": 540, "properties": { "value": 5 } },
+    { "id": "coin_3", "type": "collectible", "x": 750, "y": 380, "properties": { "value": 10 } }
+  ],
+  "triggers": [
+    {
+      "id": "welcome_trigger",
+      "condition": { "type": "on_level_start" },
+      "actions": [
+        { "type": "play_dialogue", "params": { "dialogueId": "dlg_welcome" } }
+      ],
+      "once": true
+    },
+    {
+      "id": "bridge_hint",
+      "condition": {
+        "type": "on_enter_region",
+        "params": { "x": 80, "y": 760, "w": 200, "h": 100 }
+      },
+      "actions": [
+        { "type": "show_text", "params": { "text": "This glowing zone opens a Bridge Build challenge. Combine tiles to match the target!" } }
+      ],
+      "once": true
+    },
+    {
+      "id": "midway_encouragement",
+      "condition": { "type": "on_checkpoint" },
+      "actions": [
+        { "type": "show_text", "params": { "text": "Good progress! Keep climbing." } }
+      ],
+      "once": false
+    },
+    {
+      "id": "streak_bonus",
+      "condition": {
+        "type": "on_correct_streak",
+        "params": { "count": 2 }
+      },
+      "actions": [
+        { "type": "show_text", "params": { "text": "Streak bonus! You're on fire!" } }
+      ],
+      "once": false
+    },
+    {
+      "id": "all_done",
+      "condition": { "type": "on_all_encounters_complete" },
+      "actions": [
+        { "type": "unlock_path", "params": { "entityId": "exit" } },
+        { "type": "play_dialogue", "params": { "dialogueId": "dlg_allclear" } }
+      ],
+      "once": true
+    }
+  ],
+  "mathEncounters": [
+    {
+      "id": "enc_bridge",
+      "encounterType": "bridge_build",
+      "skill": "addition_subtraction",
+      "difficulty": "easy",
+      "successTarget": 1,
+      "failureLimit": 3,
+      "linkedEntityId": "eq_bridge",
+      "reward": { "type": "progress", "amount": 1 },
+      "remediation": { "onFailure": "show_hint_then_retry" }
+    },
+    {
+      "id": "enc_route",
+      "encounterType": "route_logic",
+      "skill": "multiplication_division",
+      "difficulty": "medium",
+      "successTarget": 1,
+      "failureLimit": 3,
+      "linkedEntityId": "eq_route",
+      "reward": { "type": "progress", "amount": 1 },
+      "remediation": { "onFailure": "show_hint_then_retry" }
+    },
+    {
+      "id": "enc_sequence",
+      "encounterType": "sequence_repair",
+      "skill": "addition_subtraction",
+      "difficulty": "medium",
+      "successTarget": 1,
+      "failureLimit": 3,
+      "linkedEntityId": "eq_sequence",
+      "reward": { "type": "progress", "amount": 1 },
+      "remediation": { "onFailure": "show_hint_then_retry" }
+    },
+    {
+      "id": "enc_gate",
+      "encounterType": "gate_unlock",
+      "skill": "exponents",
+      "difficulty": "easy",
+      "successTarget": 1,
+      "failureLimit": 3,
+      "linkedEntityId": "eq_gate",
+      "reward": { "type": "progress", "amount": 1 },
+      "remediation": { "onFailure": "show_hint_then_retry" }
+    }
+  ],
+  "dialogue": [
+    {
+      "id": "dlg_welcome",
+      "speaker": "Professor Pi",
+      "lines": [
+        { "text": "Welcome to the Logic Tower!", "emotion": "happy", "duration": 2.5 },
+        { "text": "This tower has different kinds of challenges. Build bridges, route numbers, and repair sequences.", "emotion": "neutral", "duration": 4.0 },
+        { "text": "Climb to the top and solve them all to unlock the exit. Good luck!", "emotion": "celebrating", "duration": 3.0 }
+      ]
+    },
+    {
+      "id": "dlg_allclear",
+      "speaker": "Professor Pi",
+      "lines": [
+        { "text": "All challenges complete! The exit at the top is now open.", "emotion": "celebrating", "duration": 3.0 }
+      ]
+    }
+  ],
+  "audio": {
+    "backgroundMusic": "tower_theme",
+    "ambience": "wind_high",
+    "soundEffects": {
+      "correct": "sfx_correct",
+      "wrong": "sfx_wrong",
+      "checkpoint": "sfx_checkpoint"
+    }
+  },
+  "rewards": [
+    { "type": "star", "amount": 1, "condition": "complete_level" },
+    { "type": "star", "amount": 1, "condition": "no_wrong_answers" },
+    { "type": "star", "amount": 1, "condition": "collect_all_items" }
+  ],
+  "difficultyProfile": {
+    "adaptive": true,
+    "minDifficulty": "easy",
+    "maxDifficulty": "hard",
+    "escalationRate": 0.4
+  }
+}

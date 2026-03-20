@@ -94,3 +94,19 @@ test('validates the demo-level-01 JSON structure', async () => {
   const result = validateLevel(level);
   assert.equal(result.valid, true, `Validation errors: ${result.errors.join(', ')}`);
 });
+
+test('validates the logic-tower-01 JSON structure', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const raw = await readFile(new URL('../content/levels/logic-tower-01.json', import.meta.url), 'utf-8');
+  const level = JSON.parse(raw);
+
+  const result = validateLevel(level);
+  assert.equal(result.valid, true, `Validation errors: ${result.errors.join(', ')}`);
+
+  // Verify it uses the new encounter types
+  const types = level.mathEncounters.map(e => e.encounterType);
+  assert.ok(types.includes('bridge_build'), 'Should have bridge_build encounter');
+  assert.ok(types.includes('route_logic'), 'Should have route_logic encounter');
+  assert.ok(types.includes('sequence_repair'), 'Should have sequence_repair encounter');
+  assert.ok(types.includes('gate_unlock'), 'Should have gate_unlock encounter');
+});
