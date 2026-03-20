@@ -13,3 +13,14 @@ services:
     # volumes:
     #   - .:/usr/src/app
     #   - /usr/src/app/node_modules
+
+  mathgame-editor:
+    build: ./tools/editor
+    container_name: mathgame-editor
+    ports:
+      - "5180:5180"
+    # Optional: For development with hot-reload, uncomment these lines
+    # and change the command to use Vite dev server instead of the static build.
+    # volumes:
+    #   - ./tools/editor:/usr/src/app
+    #   - /usr/src/app/node_modules
