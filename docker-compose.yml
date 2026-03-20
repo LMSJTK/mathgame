@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  mathgame-runtime:
+    build: .
+    container_name: mathgame-runtime
+    ports:
+      - "4173:4173"
+    environment:
+      - PORT=4173
+    # Optional: If you want to develop and see changes without rebuilding,
+    # you can mount your local directory to the container's working directory.
+    # volumes:
+    #   - .:/usr/src/app
+    #   - /usr/src/app/node_modules
