@@ -4,3 +4,6 @@ npm-debug.log
 .gitignore
 mathgame_research.pdf
 mathgame_plan.md
+dist
+tools/editor/node_modules
+tools/editor/dist
