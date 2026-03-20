@@ -24,6 +24,7 @@ export default class PlatformerScene extends Phaser.Scene {
     this.firedTriggers = new Set();
     this.activePopup = null;
     this.activeDialogue = null;
+    this.activeSubEncounter = false;
     this.levelComplete = false;
     this.collectedItems = new Set();
 
@@ -446,10 +447,20 @@ export default class PlatformerScene extends Phaser.Scene {
     }
   }
 
+  // ─── Encounter type → scene mapping ────────────────────────────
+
+  static ENCOUNTER_SCENES = {
+    target_select: 'TargetSelectScene',
+    range_landing: 'RangeLandingScene',
+    bridge_build: 'BridgeBuildScene',
+    route_logic: 'RouteLogicScene',
+    sequence_repair: 'SequenceRepairScene',
+  };
+
   // ─── Equation Encounters ──────────────────────────────────────
 
   onEquationZone(entity) {
-    if (this.activePopup || this.activeDialogue) return;
+    if (this.activePopup || this.activeDialogue || this.activeSubEncounter) return;
     const zoneState = this.equationZones.find(z => z.entity.id === entity.id);
     if (zoneState?.solved) return;
 
@@ -460,6 +471,14 @@ export default class PlatformerScene extends Phaser.Scene {
     this.player.setVelocity(0, 0);
     this.player.body.enable = false;
 
+    // Check if this encounter type has a dedicated scene
+    const subSceneKey = PlatformerScene.ENCOUNTER_SCENES[encounter.encounterType];
+    if (subSceneKey) {
+      this.launchSubEncounter(subSceneKey, encounter, zoneState);
+      return;
+    }
+
+    // Default: gate_unlock popup
     const equation = generateEquation({ skill: encounter.skill, difficulty: encounter.difficulty });
 
     this.game.events.emit('hud:update', {
@@ -469,6 +488,55 @@ export default class PlatformerScene extends Phaser.Scene {
     });
 
     this.showEquationPopup(equation, zoneState, encounter);
+  }
+
+  launchSubEncounter(sceneKey, encounter, zoneState) {
+    this.activeSubEncounter = true;
+
+    // Pause this scene visually but keep it running for the result listener
+    this.scene.pause();
+    this.scene.stop('HudScene');
+
+    // Launch the encounter scene
+    this.scene.launch(sceneKey, { encounter });
+
+    // Listen for the result
+    const onResult = (result) => {
+      this.game.events.off('encounter:result', onResult);
+
+      // Stop the sub-scene
+      this.scene.stop(sceneKey);
+      this.scene.resume('PlatformerScene');
+      this.scene.launch('HudScene');
+      this.activeSubEncounter = false;
+
+      if (result.success) {
+        zoneState.solved = true;
+        this.score += result.score || 10;
+        this.streak = result.streak || this.streak + 1;
+
+        // Update glow
+        if (zoneState.glow) {
+          this.tweens.killTweensOf(zoneState.glow);
+          zoneState.glow.setFillStyle(0x7dffb0, 0.12);
+          zoneState.glow.setStrokeStyle(1, 0x7dffb0, 0.4);
+        }
+
+        this.game.events.emit('hud:feedback', 'Encounter complete!');
+        this.game.events.emit('hud:update', { score: this.score, streak: this.streak });
+
+        this.fireTrigger('on_encounter_complete', { encounterId: encounter.id });
+        this.fireTrigger('on_correct_streak');
+
+        if (this.equationZones.every(z => z.solved)) {
+          this.fireTrigger('on_all_encounters_complete');
+        }
+      }
+
+      this.player.body.enable = true;
+    };
+
+    this.game.events.on('encounter:result', onResult);
   }
 
   showEquationPopup(equation, zoneState, encounter) {
@@ -600,7 +668,7 @@ export default class PlatformerScene extends Phaser.Scene {
   }
 
   onExit() {
-    if (this.activePopup || this.activeDialogue || this.levelComplete) return;
+    if (this.activePopup || this.activeDialogue || this.activeSubEncounter || this.levelComplete) return;
     if (this.exitLocked) {
       this.game.events.emit('hud:feedback', 'The exit is locked. Solve all equations first!');
       return;
@@ -741,7 +809,7 @@ export default class PlatformerScene extends Phaser.Scene {
   // ─── Game Loop ────────────────────────────────────────────────
 
   update() {
-    if (this.activePopup || this.activeDialogue || this.levelComplete) {
+    if (this.activePopup || this.activeDialogue || this.activeSubEncounter || this.levelComplete) {
       // Allow space to advance dialogue
       if (this.activeDialogue && Phaser.Input.Keyboard.JustDown(this.wasd.space)) {
         this.advanceDialogue();

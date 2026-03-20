@@ -5,5 +5,12 @@
     "difficulty": "easy",
     "description": "A beginner-friendly forest level introducing addition and subtraction.",
     "file": "demo-level-01.json"
+  },
+  {
+    "id": "logic-tower-01",
+    "name": "Logic Tower",
+    "difficulty": "medium",
+    "description": "A vertical tower climb with bridge builds, route logic, and sequence repair.",
+    "file": "logic-tower-01.json"
   }
 ]
