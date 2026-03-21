@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import LevelEditor from './components/LevelEditor.tsx';
 import AssetBrowser from './components/AssetBrowser.tsx';
 import AssetDetail from './components/AssetDetail.tsx';
+import { useHistory } from './hooks/useHistory.ts';
 import type { Level } from './types/level.ts';
 import type { AssetRecord } from './types/asset.ts';
 
@@ -10,7 +11,7 @@ type Tab = (typeof TABS)[number];
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('Level Editor');
-  const [level, setLevel] = useState<Level | null>(null);
+  const [level, setLevel, history] = useHistory<Level>(null);
 
   // Asset state
   const [assets, setAssets] = useState<AssetRecord[]>([]);
@@ -81,7 +82,7 @@ export default function App() {
       {/* Main content */}
       <div style={{ flex: 1, overflow: 'hidden' }}>
         {tab === 'Level Editor' && (
-          <LevelEditor level={level} onChange={setLevel} assets={assets} />
+          <LevelEditor level={level} onChange={setLevel} assets={assets} history={history} />
         )}
         {tab === 'Assets' && (
           <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', height: '100%' }}>

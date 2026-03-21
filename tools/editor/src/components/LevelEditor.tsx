@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import GridCanvas from './GridCanvas.tsx';
 import ToolPalette from './ToolPalette.tsx';
 import PropertiesPanel from './PropertiesPanel.tsx';
@@ -7,6 +7,8 @@ import TriggerPanel from './TriggerPanel.tsx';
 import DialoguePanel from './DialoguePanel.tsx';
 import LayerPanel from './LayerPanel.tsx';
 import LevelMetaBar from './LevelMetaBar.tsx';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.ts';
+import type { HistoryControls } from '../hooks/useHistory.ts';
 import type { Level, PhysicsTile, Entity, MathEncounter, Trigger, Dialogue, Layer, TileType, EntityType } from '../types/level.ts';
 import type { AssetRecord } from '../types/asset.ts';
 
@@ -30,6 +32,7 @@ interface Props {
   level: Level | null;
   onChange: (level: Level | null) => void;
   assets: AssetRecord[];
+  history: HistoryControls<Level>;
 }
 
 let nextId = 1;
@@ -56,7 +59,7 @@ function createBlankLevel(): Level {
   };
 }
 
-export default function LevelEditor({ level, onChange, assets }: Props) {
+export default function LevelEditor({ level, onChange, assets, history }: Props) {
   const [tool, setTool] = useState<Tool>({ kind: 'select' });
   const [selection, setSelection] = useState<Selection>(null);
   const [rightTab, setRightTab] = useState<RightTab>('properties');
@@ -166,6 +169,34 @@ export default function LevelEditor({ level, onChange, assets }: Props) {
     update({ layers });
   }, [lv, update]);
 
+  // Delete currently selected item
+  const deleteSelection = useCallback(() => {
+    if (!selection) return;
+    if (selection.kind === 'tile') handleRemoveTile(selection.index);
+    else if (selection.kind === 'entity') handleRemoveEntity(selection.id);
+    else if (selection.kind === 'encounter') handleRemoveEncounter(selection.id);
+    else if (selection.kind === 'trigger') handleRemoveTrigger(selection.id);
+    else if (selection.kind === 'dialogue') handleRemoveDialogue(selection.id);
+    setSelection(null);
+  }, [selection, handleRemoveTile, handleRemoveEntity, handleRemoveEncounter, handleRemoveTrigger, handleRemoveDialogue]);
+
+  // Wire up keyboard shortcuts
+  const shortcutActions = useMemo(() => ({
+    undo: history.undo,
+    redo: history.redo,
+    setToolSelect: () => setTool({ kind: 'select' }),
+    setToolErase: () => setTool({ kind: 'erase' }),
+    setToolTileSolid: () => setTool({ kind: 'tile', tileType: 'solid' }),
+    setToolTileOneWay: () => setTool({ kind: 'tile', tileType: 'one_way' }),
+    setToolTileHazard: () => setTool({ kind: 'tile', tileType: 'hazard' }),
+    setToolTileIce: () => setTool({ kind: 'tile', tileType: 'ice' }),
+    setToolTileConveyor: () => setTool({ kind: 'tile', tileType: 'conveyor' }),
+    deleteSelection,
+    deselect: () => setSelection(null),
+  }), [history.undo, history.redo, deleteSelection]);
+
+  useKeyboardShortcuts(shortcutActions);
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr 340px', gridTemplateRows: 'auto 1fr', height: '100%' }}>
       {/* Top meta bar spanning all columns */}
@@ -180,6 +211,35 @@ export default function LevelEditor({ level, onChange, assets }: Props) {
 
       {/* Center: Grid canvas */}
       <div style={{ overflow: 'hidden', position: 'relative' }}>
+        {/* Undo / Redo bar */}
+        <div style={{
+          position: 'absolute', top: 8, left: 8, zIndex: 10,
+          display: 'flex', gap: 4, background: '#0b182bee', borderRadius: 6,
+          padding: '4px 6px', border: '1px solid #1a2a4a',
+        }}>
+          <button
+            onClick={history.undo}
+            disabled={!history.canUndo}
+            title="Undo (Ctrl+Z)"
+            style={{
+              padding: '3px 10px', fontSize: 13, cursor: history.canUndo ? 'pointer' : 'default',
+              border: '1px solid #1a2a4a', borderRadius: 4,
+              background: history.canUndo ? '#1a3050' : 'transparent',
+              color: history.canUndo ? '#6ed4ff' : '#3a5a7a',
+            }}
+          >Undo</button>
+          <button
+            onClick={history.redo}
+            disabled={!history.canRedo}
+            title="Redo (Ctrl+Shift+Z)"
+            style={{
+              padding: '3px 10px', fontSize: 13, cursor: history.canRedo ? 'pointer' : 'default',
+              border: '1px solid #1a2a4a', borderRadius: 4,
+              background: history.canRedo ? '#1a3050' : 'transparent',
+              color: history.canRedo ? '#6ed4ff' : '#3a5a7a',
+            }}
+          >Redo</button>
+        </div>
         <GridCanvas
           level={lv}
           tool={tool}
