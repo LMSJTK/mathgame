@@ -81,7 +81,7 @@ export default function App() {
       {/* Main content */}
       <div style={{ flex: 1, overflow: 'hidden' }}>
         {tab === 'Level Editor' && (
-          <LevelEditor level={level} onChange={setLevel} />
+          <LevelEditor level={level} onChange={setLevel} assets={assets} />
         )}
         {tab === 'Assets' && (
           <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', height: '100%' }}>

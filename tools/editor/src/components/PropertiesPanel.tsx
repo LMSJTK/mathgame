@@ -1,10 +1,14 @@
+import { useState } from 'react';
 import type { Level, PhysicsTile, Entity } from '../types/level.ts';
+import type { AssetRecord } from '../types/asset.ts';
 import type { Selection } from './LevelEditor.tsx';
 import { TILE_TYPE_OPTIONS, ENTITY_TYPE_OPTIONS } from '../types/level.ts';
+import AssetPickerModal from './AssetPickerModal.tsx';
 
 interface Props {
   level: Level;
   selection: Selection;
+  assets: AssetRecord[];
   onUpdateTile: (index: number, tile: PhysicsTile) => void;
   onRemoveTile: (index: number) => void;
   onUpdateEntity: (id: string, patch: Partial<Entity>) => void;
@@ -12,10 +16,12 @@ interface Props {
 }
 
 export default function PropertiesPanel({
-  level, selection,
+  level, selection, assets,
   onUpdateTile, onRemoveTile,
   onUpdateEntity, onRemoveEntity,
 }: Props) {
+  const [pickerTarget, setPickerTarget] = useState<{ kind: 'tile'; index: number } | { kind: 'entity'; id: string } | null>(null);
+
   if (!selection) {
     return <Empty>Click a tile or entity to view its properties.</Empty>;
   }
@@ -41,9 +47,24 @@ export default function PropertiesPanel({
           <Field label="Height"><NumInput value={tile.h} min={1} onChange={v => onUpdateTile(selection.index, { ...tile, h: v })} /></Field>
         </Row>
         <Field label="Asset Ref">
-          <TextInput value={tile.assetRef ?? ''} onChange={v => onUpdateTile(selection.index, { ...tile, assetRef: v || undefined })} />
+          <AssetRefField
+            value={tile.assetRef}
+            assets={assets}
+            onPick={() => setPickerTarget({ kind: 'tile', index: selection.index })}
+          />
         </Field>
         <DangerBtn label="Delete Tile" onClick={() => onRemoveTile(selection.index)} />
+        {pickerTarget?.kind === 'tile' && (
+          <AssetPickerModal
+            assets={assets}
+            filterCategory="tile"
+            onSelect={assetId => {
+              onUpdateTile(pickerTarget.index, { ...tile, assetRef: assetId || undefined });
+              setPickerTarget(null);
+            }}
+            onCancel={() => setPickerTarget(null)}
+          />
+        )}
       </div>
     );
   }
@@ -68,8 +89,22 @@ export default function PropertiesPanel({
           <Field label="Y"><NumInput value={entity.y} onChange={v => onUpdateEntity(entity.id, { y: v })} /></Field>
         </Row>
         <Field label="Asset Ref">
-          <TextInput value={entity.assetRef ?? ''} onChange={v => onUpdateEntity(entity.id, { assetRef: v || undefined })} />
+          <AssetRefField
+            value={entity.assetRef}
+            assets={assets}
+            onPick={() => setPickerTarget({ kind: 'entity', id: entity.id })}
+          />
         </Field>
+        {pickerTarget?.kind === 'entity' && (
+          <AssetPickerModal
+            assets={assets}
+            onSelect={assetId => {
+              onUpdateEntity((pickerTarget as { kind: 'entity'; id: string }).id, { assetRef: assetId || undefined });
+              setPickerTarget(null);
+            }}
+            onCancel={() => setPickerTarget(null)}
+          />
+        )}
 
         {/* Dynamic properties */}
         {entity.type === 'equation_zone' && (
@@ -162,6 +197,27 @@ function TextInput({ value, onChange }: { value: string; onChange: (v: string) =
         background: '#08111f', border: '1px solid #1a2a4a', borderRadius: 4, color: '#eef6ff',
       }}
     />
+  );
+}
+
+function AssetRefField({ value, assets, onPick }: { value?: string; assets: AssetRecord[]; onPick: () => void }) {
+  const resolved = value ? assets.find(a => a.id === value)?.name ?? value : '(none)';
+  return (
+    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+      <div style={{
+        flex: 1, padding: '4px 6px', fontSize: 12,
+        background: '#08111f', border: '1px solid #1a2a4a', borderRadius: 4,
+        color: value ? '#eef6ff' : '#6b7280',
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+      }}>
+        {resolved}
+      </div>
+      <button onClick={onPick} style={{
+        padding: '3px 10px', fontSize: 11, cursor: 'pointer',
+        border: '1px solid #6ed4ff', borderRadius: 5,
+        background: '#1a3050', color: '#6ed4ff', whiteSpace: 'nowrap',
+      }}>Pick</button>
+    </div>
   );
 }
 

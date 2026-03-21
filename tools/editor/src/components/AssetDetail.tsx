@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { AssetRecord, AssetCategory, AssetState, AnimationClip } from '../types/asset.ts';
 import { ASSET_CATEGORIES, ASSET_STATES, EXPRESSIONS } from '../types/asset.ts';
+import AnimationPreview from './AnimationPreview.tsx';
 
 interface Props {
   asset: AssetRecord;
@@ -180,6 +181,13 @@ export default function AssetDetail({ asset, onUpdate }: Props) {
               </Field>
             ))}
           </div>
+        </Section>
+      )}
+
+      {/* Animation Preview */}
+      {(asset.animations?.length ?? 0) > 0 && (
+        <Section title="Preview">
+          <AnimationPreview clips={asset.animations!} />
         </Section>
       )}
 

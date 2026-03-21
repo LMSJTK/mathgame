@@ -5,8 +5,10 @@ import PropertiesPanel from './PropertiesPanel.tsx';
 import EncounterPanel from './EncounterPanel.tsx';
 import TriggerPanel from './TriggerPanel.tsx';
 import DialoguePanel from './DialoguePanel.tsx';
+import LayerPanel from './LayerPanel.tsx';
 import LevelMetaBar from './LevelMetaBar.tsx';
-import type { Level, PhysicsTile, Entity, MathEncounter, Trigger, Dialogue, TileType, EntityType } from '../types/level.ts';
+import type { Level, PhysicsTile, Entity, MathEncounter, Trigger, Dialogue, Layer, TileType, EntityType } from '../types/level.ts';
+import type { AssetRecord } from '../types/asset.ts';
 
 export type Tool =
   | { kind: 'tile'; tileType: TileType }
@@ -22,11 +24,12 @@ export type Selection =
   | { kind: 'dialogue'; id: string }
   | null;
 
-type RightTab = 'properties' | 'encounters' | 'triggers' | 'dialogue';
+type RightTab = 'properties' | 'encounters' | 'triggers' | 'dialogue' | 'layers';
 
 interface Props {
   level: Level | null;
   onChange: (level: Level | null) => void;
+  assets: AssetRecord[];
 }
 
 let nextId = 1;
@@ -53,7 +56,7 @@ function createBlankLevel(): Level {
   };
 }
 
-export default function LevelEditor({ level, onChange }: Props) {
+export default function LevelEditor({ level, onChange, assets }: Props) {
   const [tool, setTool] = useState<Tool>({ kind: 'select' });
   const [selection, setSelection] = useState<Selection>(null);
   const [rightTab, setRightTab] = useState<RightTab>('properties');
@@ -141,6 +144,28 @@ export default function LevelEditor({ level, onChange }: Props) {
     update({ dialogue: (lv.dialogue ?? []).filter(d => d.id !== id) });
   }, [lv, update]);
 
+  // Layer CRUD
+  const handleAddLayer = useCallback((layer: Layer) => {
+    update({ layers: [...(lv.layers ?? []), layer] });
+  }, [lv, update]);
+
+  const handleUpdateLayer = useCallback((id: string, patch: Partial<Layer>) => {
+    update({
+      layers: (lv.layers ?? []).map(l => l.id === id ? { ...l, ...patch } : l),
+    });
+  }, [lv, update]);
+
+  const handleRemoveLayer = useCallback((id: string) => {
+    update({ layers: (lv.layers ?? []).filter(l => l.id !== id) });
+  }, [lv, update]);
+
+  const handleReorderLayer = useCallback((fromIndex: number, toIndex: number) => {
+    const layers = [...(lv.layers ?? [])];
+    const [moved] = layers.splice(fromIndex, 1);
+    layers.splice(toIndex, 0, moved);
+    update({ layers });
+  }, [lv, update]);
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr 340px', gridTemplateRows: 'auto 1fr', height: '100%' }}>
       {/* Top meta bar spanning all columns */}
@@ -172,7 +197,7 @@ export default function LevelEditor({ level, onChange }: Props) {
       {/* Right: Properties / Encounters / Triggers / Dialogue */}
       <div style={{ overflow: 'hidden', borderLeft: '1px solid #1a2a4a', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', borderBottom: '1px solid #1a2a4a' }}>
-          {(['properties', 'encounters', 'triggers', 'dialogue'] as const).map(t => (
+          {(['properties', 'layers', 'encounters', 'triggers', 'dialogue'] as const).map(t => (
             <button key={t} onClick={() => setRightTab(t)} style={{
               flex: 1, padding: '6px 4px', fontSize: 11, cursor: 'pointer',
               border: 'none', borderBottom: t === rightTab ? '2px solid #6ed4ff' : '2px solid transparent',
@@ -189,10 +214,21 @@ export default function LevelEditor({ level, onChange }: Props) {
             <PropertiesPanel
               level={lv}
               selection={selection}
+              assets={assets}
               onUpdateTile={handleUpdateTile}
               onRemoveTile={handleRemoveTile}
               onUpdateEntity={handleUpdateEntity}
               onRemoveEntity={handleRemoveEntity}
+            />
+          )}
+          {rightTab === 'layers' && (
+            <LayerPanel
+              layers={lv.layers ?? []}
+              assets={assets}
+              onAdd={handleAddLayer}
+              onUpdate={handleUpdateLayer}
+              onRemove={handleRemoveLayer}
+              onReorder={handleReorderLayer}
             />
           )}
           {rightTab === 'encounters' && (
