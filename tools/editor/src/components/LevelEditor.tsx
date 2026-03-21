@@ -6,10 +6,12 @@ import EncounterPanel from './EncounterPanel.tsx';
 import TriggerPanel from './TriggerPanel.tsx';
 import DialoguePanel from './DialoguePanel.tsx';
 import LayerPanel from './LayerPanel.tsx';
+import AudioPanel from './AudioPanel.tsx';
+import DifficultyPanel from './DifficultyPanel.tsx';
 import LevelMetaBar from './LevelMetaBar.tsx';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.ts';
 import type { HistoryControls } from '../hooks/useHistory.ts';
-import type { Level, PhysicsTile, Entity, MathEncounter, Trigger, Dialogue, Layer, TileType, EntityType } from '../types/level.ts';
+import type { Level, PhysicsTile, Entity, MathEncounter, Trigger, Dialogue, Layer, DifficultyProfile, TileType, EntityType } from '../types/level.ts';
 import type { AssetRecord } from '../types/asset.ts';
 
 export type Tool =
@@ -26,7 +28,7 @@ export type Selection =
   | { kind: 'dialogue'; id: string }
   | null;
 
-type RightTab = 'properties' | 'encounters' | 'triggers' | 'dialogue' | 'layers';
+type RightTab = 'properties' | 'encounters' | 'triggers' | 'dialogue' | 'layers' | 'audio' | 'difficulty';
 
 interface Props {
   level: Level | null;
@@ -169,6 +171,16 @@ export default function LevelEditor({ level, onChange, assets, history }: Props)
     update({ layers });
   }, [lv, update]);
 
+  // Audio
+  const handleUpdateAudio = useCallback((audio: Level['audio']) => {
+    update({ audio });
+  }, [update]);
+
+  // Difficulty profile
+  const handleUpdateDifficulty = useCallback((difficultyProfile: DifficultyProfile) => {
+    update({ difficultyProfile });
+  }, [update]);
+
   // Delete currently selected item
   const deleteSelection = useCallback(() => {
     if (!selection) return;
@@ -257,7 +269,7 @@ export default function LevelEditor({ level, onChange, assets, history }: Props)
       {/* Right: Properties / Encounters / Triggers / Dialogue */}
       <div style={{ overflow: 'hidden', borderLeft: '1px solid #1a2a4a', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', borderBottom: '1px solid #1a2a4a' }}>
-          {(['properties', 'layers', 'encounters', 'triggers', 'dialogue'] as const).map(t => (
+          {(['properties', 'layers', 'encounters', 'triggers', 'dialogue', 'audio', 'difficulty'] as const).map(t => (
             <button key={t} onClick={() => setRightTab(t)} style={{
               flex: 1, padding: '6px 4px', fontSize: 11, cursor: 'pointer',
               border: 'none', borderBottom: t === rightTab ? '2px solid #6ed4ff' : '2px solid transparent',
@@ -316,6 +328,19 @@ export default function LevelEditor({ level, onChange, assets, history }: Props)
               onAdd={handleAddDialogue}
               onUpdate={handleUpdateDialogue}
               onRemove={handleRemoveDialogue}
+            />
+          )}
+          {rightTab === 'audio' && (
+            <AudioPanel
+              audio={lv.audio ?? {}}
+              assets={assets}
+              onChange={handleUpdateAudio}
+            />
+          )}
+          {rightTab === 'difficulty' && (
+            <DifficultyPanel
+              profile={lv.difficultyProfile ?? { adaptive: false }}
+              onChange={handleUpdateDifficulty}
             />
           )}
         </div>
