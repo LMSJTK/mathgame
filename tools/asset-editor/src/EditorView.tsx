@@ -57,7 +57,7 @@ export default function EditorView() {
           }}>Variants</button>
         </div>
         {leftTab === 'generate' && <PromptPanel onAssetCreated={handleAssetCreated} />}
-        {leftTab === 'variants' && <VariantPanel sourceAsset={currentAsset} onVariantCreated={handleAssetCreated} />}
+        {leftTab === 'variants' && <VariantPanel sourceAsset={currentAsset} onVariantCreated={handleAssetCreated} onAssetUpdated={handleAssetUpdated} />}
         <AssetBrowser
           refreshKey={refreshKey}
           currentAssetId={currentAsset?.id}
