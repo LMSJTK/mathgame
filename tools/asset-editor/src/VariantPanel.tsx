@@ -34,9 +34,10 @@ const ANIMATION_PRESETS = [
 interface Props {
   sourceAsset: AssetRecord | null;
   onVariantCreated: () => void;
+  onAssetUpdated?: (asset: AssetRecord) => void;
 }
 
-export default function VariantPanel({ sourceAsset, onVariantCreated }: Props) {
+export default function VariantPanel({ sourceAsset, onVariantCreated, onAssetUpdated }: Props) {
   const [mode, setMode] = useState<'variant' | 'animation'>('variant');
 
   // Variant state
@@ -133,8 +134,9 @@ export default function VariantPanel({ sourceAsset, onVariantCreated }: Props) {
         loop: true,
       };
 
-      await assetsApi.addAnimation(sourceAsset.id, clip);
+      const updated = await assetsApi.addAnimation(sourceAsset.id, clip);
       setLastResult(result.frames[0]);
+      if (onAssetUpdated) onAssetUpdated(updated);
       onVariantCreated();
     } catch (err: any) {
       setError(err.message || 'Animation generation failed');
