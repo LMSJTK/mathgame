@@ -210,7 +210,7 @@ export async function generateVariant(params: VariantParams): Promise<VariantRes
 
   // Use Gemini multimodal to generate the variant
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-2.5-flash-image',
     contents: [
       {
         role: 'user',
@@ -253,7 +253,7 @@ export async function generateVariant(params: VariantParams): Promise<VariantRes
   return {
     prompt: instruction,
     imagePath,
-    model: 'gemini-2.5-flash',
+    model: 'gemini-2.5-flash-image',
   };
 }
 
