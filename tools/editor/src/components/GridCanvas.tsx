@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
-import type { Level, PhysicsTile, Entity } from '../types/level.ts';
+import type { Level, PhysicsTile, Entity, Layer } from '../types/level.ts';
 import type { Tool, Selection } from './LevelEditor.tsx';
 import { genId } from './LevelEditor.tsx';
 
@@ -20,6 +20,12 @@ const ENTITY_COLORS: Record<string, string> = {
   enemy: '#ff6e6e',
   moving_platform: '#9eb8d4',
   equation_zone: '#c084fc',
+};
+
+const LAYER_COLORS: Record<string, string> = {
+  background: '#1a3a5a',
+  foreground: '#3a5a1a',
+  parallax: '#5a3a6a',
 };
 
 interface Props {
@@ -85,8 +91,15 @@ export default function GridCanvas({
     ctx.translate(camera.x, camera.y);
     ctx.scale(camera.zoom, camera.zoom);
 
+    // --- Background layers (drawn behind everything) ---
+    const layers = level.layers ?? [];
+    const bgLayers = layers.filter(l => l.type === 'background' || l.type === 'parallax');
+    bgLayers.forEach((layer, i) => {
+      drawLayerBand(ctx, layer, i, bgLayers.length, worldW, worldH);
+    });
+
     // Grid background
-    ctx.fillStyle = '#060d18';
+    ctx.fillStyle = '#060d1880';
     ctx.fillRect(0, 0, worldW, worldH);
 
     // Grid lines
@@ -172,6 +185,12 @@ export default function GridCanvas({
       ctx.font = '9px Inter, sans-serif';
       ctx.textBaseline = 'top';
       ctx.fillText(entity.id, entity.x, entity.y + 12);
+    });
+
+    // --- Foreground layers (drawn on top with low opacity) ---
+    const fgLayers = layers.filter(l => l.type === 'foreground');
+    fgLayers.forEach((layer, i) => {
+      drawLayerBand(ctx, layer, i, fgLayers.length, worldW, worldH);
     });
 
     ctx.restore();
@@ -348,4 +367,55 @@ export default function GridCanvas({
       />
     </div>
   );
+}
+
+/** Draw a single layer as a colored band with label and metadata */
+function drawLayerBand(
+  ctx: CanvasRenderingContext2D,
+  layer: Layer,
+  index: number,
+  total: number,
+  worldW: number,
+  worldH: number,
+) {
+  const color = LAYER_COLORS[layer.type] ?? '#3a3a3a';
+  const bandH = Math.max(24, worldH / Math.max(total, 4));
+  const y = index * bandH;
+
+  // Colored band
+  ctx.fillStyle = color + '20';
+  ctx.fillRect(0, y, worldW, bandH);
+
+  // Top edge line
+  ctx.strokeStyle = color + '60';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([6, 4]);
+  ctx.beginPath();
+  ctx.moveTo(0, y);
+  ctx.lineTo(worldW, y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Label pill
+  const label = `${layer.type}${layer.depth != null ? ` d:${layer.depth}` : ''}${layer.scrollFactor ? ` s:${layer.scrollFactor.x},${layer.scrollFactor.y}` : ''}`;
+  ctx.font = '10px Inter, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  const textW = ctx.measureText(label).width;
+
+  // Pill background
+  ctx.fillStyle = color + '80';
+  ctx.beginPath();
+  ctx.roundRect(6, y + 4, textW + 12, 16, 4);
+  ctx.fill();
+
+  // Pill text
+  ctx.fillStyle = '#eef6ff';
+  ctx.fillText(label, 12, y + 7);
+
+  // Layer ID on the right
+  ctx.textAlign = 'right';
+  ctx.fillStyle = color + '90';
+  ctx.fillText(layer.id, worldW - 8, y + 7);
+  ctx.textAlign = 'left';
 }

@@ -1,6 +1,7 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { Level } from '../types/level.ts';
 import { genId } from './LevelEditor.tsx';
+import { validateLevel, type ValidationIssue } from '../validation/validateLevel.ts';
 
 interface Props {
   level: Level;
@@ -9,8 +10,22 @@ interface Props {
 
 export default function LevelMetaBar({ level, onChange }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [issues, setIssues] = useState<ValidationIssue[]>([]);
+  const [showIssues, setShowIssues] = useState(false);
+
+  const handleValidate = () => {
+    const result = validateLevel(level);
+    setIssues(result);
+    setShowIssues(true);
+    return result;
+  };
 
   const handleExport = () => {
+    const result = handleValidate();
+    const errors = result.filter(i => i.severity === 'error');
+    if (errors.length > 0) {
+      if (!confirm(`Level has ${errors.length} error(s). Export anyway?`)) return;
+    }
     const json = JSON.stringify(level, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -54,7 +69,7 @@ export default function LevelMetaBar({ level, onChange }: Props) {
     });
   };
 
-  return (
+  return (<>
     <div style={{
       display: 'flex', alignItems: 'center', gap: 10,
       padding: '6px 12px', background: '#0d1a30',
@@ -115,6 +130,7 @@ export default function LevelMetaBar({ level, onChange }: Props) {
       {/* File operations */}
       <Btn label="New" onClick={handleNew} />
       <Btn label="Import" onClick={() => fileRef.current?.click()} />
+      <Btn label="Validate" onClick={handleValidate} />
       <Btn label="Export JSON" onClick={handleExport} primary />
       <input ref={fileRef} type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
 
@@ -122,8 +138,43 @@ export default function LevelMetaBar({ level, onChange }: Props) {
       <span style={{ color: '#9eb8d4', fontSize: 11 }}>
         {level.physicsTiles.length} tiles | {level.entities.length} entities | {level.mathEncounters.length} encounters
       </span>
+
+      {/* Validation badge */}
+      {showIssues && (
+        <button
+          onClick={() => setShowIssues(false)}
+          style={{
+            padding: '2px 10px', fontSize: 11, cursor: 'pointer', borderRadius: 4,
+            border: issues.some(i => i.severity === 'error') ? '1px solid #ff6e6e' : issues.length > 0 ? '1px solid #f59e0b' : '1px solid #7dffb0',
+            background: 'transparent',
+            color: issues.some(i => i.severity === 'error') ? '#ff6e6e' : issues.length > 0 ? '#f59e0b' : '#7dffb0',
+          }}
+        >
+          {issues.length === 0 ? 'Valid' : `${issues.filter(i => i.severity === 'error').length}E ${issues.filter(i => i.severity === 'warning').length}W`}
+        </button>
+      )}
     </div>
-  );
+    {/* Validation issues dropdown */}
+    {showIssues && issues.length > 0 && (
+      <div style={{
+        background: '#0d1a30', borderBottom: '1px solid #1a2a4a',
+        padding: '6px 12px', maxHeight: 160, overflowY: 'auto',
+      }}>
+        {issues.map((issue, i) => (
+          <div key={i} style={{
+            display: 'flex', gap: 8, alignItems: 'baseline',
+            fontSize: 11, padding: '2px 0',
+            color: issue.severity === 'error' ? '#ff6e6e' : '#f59e0b',
+          }}>
+            <span style={{ fontWeight: 700, minWidth: 12 }}>
+              {issue.severity === 'error' ? 'E' : 'W'}
+            </span>
+            <span>{issue.message}</span>
+          </div>
+        ))}
+      </div>
+    )}
+  </>);
 }
 
 function Btn({ label, onClick, primary }: { label: string; onClick: () => void; primary?: boolean }) {
