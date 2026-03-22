@@ -32,13 +32,17 @@ function isActive(tool: Tool, kind: string, sub?: string): boolean {
   return true;
 }
 
+const TILE_SHORTCUTS: Record<string, string> = {
+  solid: '1', one_way: '2', hazard: '3', ice: '4', conveyor: '5',
+};
+
 export default function ToolPalette({ tool, onToolChange }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {/* Mode tools */}
       <Section title="Mode">
-        <ToolButton label="Select" active={tool.kind === 'select'} onClick={() => onToolChange({ kind: 'select' })} />
-        <ToolButton label="Erase" active={tool.kind === 'erase'} onClick={() => onToolChange({ kind: 'erase' })} color="#ff6e6e" />
+        <ToolButton label="Select" shortcut="S" active={tool.kind === 'select'} onClick={() => onToolChange({ kind: 'select' })} />
+        <ToolButton label="Erase" shortcut="X" active={tool.kind === 'erase'} onClick={() => onToolChange({ kind: 'erase' })} color="#ff6e6e" />
       </Section>
 
       {/* Tile tools */}
@@ -47,6 +51,7 @@ export default function ToolPalette({ tool, onToolChange }: Props) {
           <ToolButton
             key={t}
             label={t.replace('_', ' ')}
+            shortcut={TILE_SHORTCUTS[t]}
             active={isActive(tool, 'tile', t)}
             onClick={() => onToolChange({ kind: 'tile', tileType: t })}
             swatch={TILE_COLORS[t]}
@@ -66,6 +71,16 @@ export default function ToolPalette({ tool, onToolChange }: Props) {
           />
         ))}
       </Section>
+
+      {/* Shortcut reference */}
+      <Section title="Shortcuts">
+        <div style={{ fontSize: 10, color: '#6b8aaa', lineHeight: 1.8 }}>
+          <div><Kbd>Ctrl+Z</Kbd> Undo</div>
+          <div><Kbd>Ctrl+Shift+Z</Kbd> Redo</div>
+          <div><Kbd>Del</Kbd> Delete selected</div>
+          <div><Kbd>Esc</Kbd> Deselect</div>
+        </div>
+      </Section>
     </div>
   );
 }
@@ -79,8 +94,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function ToolButton({ label, active, onClick, swatch, icon, color }: {
-  label: string; active: boolean; onClick: () => void; swatch?: string; icon?: string; color?: string;
+function ToolButton({ label, active, onClick, swatch, icon, color, shortcut }: {
+  label: string; active: boolean; onClick: () => void; swatch?: string; icon?: string; color?: string; shortcut?: string;
 }) {
   return (
     <button onClick={onClick} style={{
@@ -94,7 +109,18 @@ function ToolButton({ label, active, onClick, swatch, icon, color }: {
     }}>
       {swatch && <span style={{ width: 14, height: 14, borderRadius: 3, background: swatch, flexShrink: 0 }} />}
       {icon && <span style={{ width: 18, textAlign: 'center', fontWeight: 700, fontSize: 13, color: '#6ed4ff' }}>{icon}</span>}
-      {label}
+      <span style={{ flex: 1 }}>{label}</span>
+      {shortcut && <Kbd>{shortcut}</Kbd>}
     </button>
+  );
+}
+
+function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd style={{
+      display: 'inline-block', padding: '1px 5px', fontSize: 10,
+      background: '#0f1a2d', border: '1px solid #1a2a4a', borderRadius: 3,
+      color: '#6b8aaa', fontFamily: 'inherit', lineHeight: 1.4,
+    }}>{children}</kbd>
   );
 }

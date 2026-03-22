@@ -1,12 +1,18 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import GridCanvas from './GridCanvas.tsx';
 import ToolPalette from './ToolPalette.tsx';
 import PropertiesPanel from './PropertiesPanel.tsx';
 import EncounterPanel from './EncounterPanel.tsx';
 import TriggerPanel from './TriggerPanel.tsx';
 import DialoguePanel from './DialoguePanel.tsx';
+import LayerPanel from './LayerPanel.tsx';
+import AudioPanel from './AudioPanel.tsx';
+import DifficultyPanel from './DifficultyPanel.tsx';
 import LevelMetaBar from './LevelMetaBar.tsx';
-import type { Level, PhysicsTile, Entity, MathEncounter, Trigger, Dialogue, TileType, EntityType } from '../types/level.ts';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.ts';
+import type { HistoryControls } from '../hooks/useHistory.ts';
+import type { Level, PhysicsTile, Entity, MathEncounter, Trigger, Dialogue, Layer, DifficultyProfile, TileType, EntityType } from '../types/level.ts';
+import type { AssetRecord } from '../types/asset.ts';
 
 export type Tool =
   | { kind: 'tile'; tileType: TileType }
@@ -22,11 +28,13 @@ export type Selection =
   | { kind: 'dialogue'; id: string }
   | null;
 
-type RightTab = 'properties' | 'encounters' | 'triggers' | 'dialogue';
+type RightTab = 'properties' | 'encounters' | 'triggers' | 'dialogue' | 'layers' | 'audio' | 'difficulty';
 
 interface Props {
   level: Level | null;
   onChange: (level: Level | null) => void;
+  assets: AssetRecord[];
+  history: HistoryControls<Level>;
 }
 
 let nextId = 1;
@@ -53,7 +61,7 @@ function createBlankLevel(): Level {
   };
 }
 
-export default function LevelEditor({ level, onChange }: Props) {
+export default function LevelEditor({ level, onChange, assets, history }: Props) {
   const [tool, setTool] = useState<Tool>({ kind: 'select' });
   const [selection, setSelection] = useState<Selection>(null);
   const [rightTab, setRightTab] = useState<RightTab>('properties');
@@ -141,6 +149,66 @@ export default function LevelEditor({ level, onChange }: Props) {
     update({ dialogue: (lv.dialogue ?? []).filter(d => d.id !== id) });
   }, [lv, update]);
 
+  // Layer CRUD
+  const handleAddLayer = useCallback((layer: Layer) => {
+    update({ layers: [...(lv.layers ?? []), layer] });
+  }, [lv, update]);
+
+  const handleUpdateLayer = useCallback((id: string, patch: Partial<Layer>) => {
+    update({
+      layers: (lv.layers ?? []).map(l => l.id === id ? { ...l, ...patch } : l),
+    });
+  }, [lv, update]);
+
+  const handleRemoveLayer = useCallback((id: string) => {
+    update({ layers: (lv.layers ?? []).filter(l => l.id !== id) });
+  }, [lv, update]);
+
+  const handleReorderLayer = useCallback((fromIndex: number, toIndex: number) => {
+    const layers = [...(lv.layers ?? [])];
+    const [moved] = layers.splice(fromIndex, 1);
+    layers.splice(toIndex, 0, moved);
+    update({ layers });
+  }, [lv, update]);
+
+  // Audio
+  const handleUpdateAudio = useCallback((audio: Level['audio']) => {
+    update({ audio });
+  }, [update]);
+
+  // Difficulty profile
+  const handleUpdateDifficulty = useCallback((difficultyProfile: DifficultyProfile) => {
+    update({ difficultyProfile });
+  }, [update]);
+
+  // Delete currently selected item
+  const deleteSelection = useCallback(() => {
+    if (!selection) return;
+    if (selection.kind === 'tile') handleRemoveTile(selection.index);
+    else if (selection.kind === 'entity') handleRemoveEntity(selection.id);
+    else if (selection.kind === 'encounter') handleRemoveEncounter(selection.id);
+    else if (selection.kind === 'trigger') handleRemoveTrigger(selection.id);
+    else if (selection.kind === 'dialogue') handleRemoveDialogue(selection.id);
+    setSelection(null);
+  }, [selection, handleRemoveTile, handleRemoveEntity, handleRemoveEncounter, handleRemoveTrigger, handleRemoveDialogue]);
+
+  // Wire up keyboard shortcuts
+  const shortcutActions = useMemo(() => ({
+    undo: history.undo,
+    redo: history.redo,
+    setToolSelect: () => setTool({ kind: 'select' }),
+    setToolErase: () => setTool({ kind: 'erase' }),
+    setToolTileSolid: () => setTool({ kind: 'tile', tileType: 'solid' }),
+    setToolTileOneWay: () => setTool({ kind: 'tile', tileType: 'one_way' }),
+    setToolTileHazard: () => setTool({ kind: 'tile', tileType: 'hazard' }),
+    setToolTileIce: () => setTool({ kind: 'tile', tileType: 'ice' }),
+    setToolTileConveyor: () => setTool({ kind: 'tile', tileType: 'conveyor' }),
+    deleteSelection,
+    deselect: () => setSelection(null),
+  }), [history.undo, history.redo, deleteSelection]);
+
+  useKeyboardShortcuts(shortcutActions);
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr 340px', gridTemplateRows: 'auto 1fr', height: '100%' }}>
       {/* Top meta bar spanning all columns */}
@@ -155,6 +223,35 @@ export default function LevelEditor({ level, onChange }: Props) {
 
       {/* Center: Grid canvas */}
       <div style={{ overflow: 'hidden', position: 'relative' }}>
+        {/* Undo / Redo bar */}
+        <div style={{
+          position: 'absolute', top: 8, left: 8, zIndex: 10,
+          display: 'flex', gap: 4, background: '#0b182bee', borderRadius: 6,
+          padding: '4px 6px', border: '1px solid #1a2a4a',
+        }}>
+          <button
+            onClick={history.undo}
+            disabled={!history.canUndo}
+            title="Undo (Ctrl+Z)"
+            style={{
+              padding: '3px 10px', fontSize: 13, cursor: history.canUndo ? 'pointer' : 'default',
+              border: '1px solid #1a2a4a', borderRadius: 4,
+              background: history.canUndo ? '#1a3050' : 'transparent',
+              color: history.canUndo ? '#6ed4ff' : '#3a5a7a',
+            }}
+          >Undo</button>
+          <button
+            onClick={history.redo}
+            disabled={!history.canRedo}
+            title="Redo (Ctrl+Shift+Z)"
+            style={{
+              padding: '3px 10px', fontSize: 13, cursor: history.canRedo ? 'pointer' : 'default',
+              border: '1px solid #1a2a4a', borderRadius: 4,
+              background: history.canRedo ? '#1a3050' : 'transparent',
+              color: history.canRedo ? '#6ed4ff' : '#3a5a7a',
+            }}
+          >Redo</button>
+        </div>
         <GridCanvas
           level={lv}
           tool={tool}
@@ -172,7 +269,7 @@ export default function LevelEditor({ level, onChange }: Props) {
       {/* Right: Properties / Encounters / Triggers / Dialogue */}
       <div style={{ overflow: 'hidden', borderLeft: '1px solid #1a2a4a', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', borderBottom: '1px solid #1a2a4a' }}>
-          {(['properties', 'encounters', 'triggers', 'dialogue'] as const).map(t => (
+          {(['properties', 'layers', 'encounters', 'triggers', 'dialogue', 'audio', 'difficulty'] as const).map(t => (
             <button key={t} onClick={() => setRightTab(t)} style={{
               flex: 1, padding: '6px 4px', fontSize: 11, cursor: 'pointer',
               border: 'none', borderBottom: t === rightTab ? '2px solid #6ed4ff' : '2px solid transparent',
@@ -189,10 +286,21 @@ export default function LevelEditor({ level, onChange }: Props) {
             <PropertiesPanel
               level={lv}
               selection={selection}
+              assets={assets}
               onUpdateTile={handleUpdateTile}
               onRemoveTile={handleRemoveTile}
               onUpdateEntity={handleUpdateEntity}
               onRemoveEntity={handleRemoveEntity}
+            />
+          )}
+          {rightTab === 'layers' && (
+            <LayerPanel
+              layers={lv.layers ?? []}
+              assets={assets}
+              onAdd={handleAddLayer}
+              onUpdate={handleUpdateLayer}
+              onRemove={handleRemoveLayer}
+              onReorder={handleReorderLayer}
             />
           )}
           {rightTab === 'encounters' && (
@@ -220,6 +328,19 @@ export default function LevelEditor({ level, onChange }: Props) {
               onAdd={handleAddDialogue}
               onUpdate={handleUpdateDialogue}
               onRemove={handleRemoveDialogue}
+            />
+          )}
+          {rightTab === 'audio' && (
+            <AudioPanel
+              audio={lv.audio ?? {}}
+              assets={assets}
+              onChange={handleUpdateAudio}
+            />
+          )}
+          {rightTab === 'difficulty' && (
+            <DifficultyPanel
+              profile={lv.difficultyProfile ?? { adaptive: false }}
+              onChange={handleUpdateDifficulty}
             />
           )}
         </div>
