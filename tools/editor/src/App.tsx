@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import LevelEditor from './components/LevelEditor.tsx';
 import AssetBrowser from './components/AssetBrowser.tsx';
 import AssetDetail from './components/AssetDetail.tsx';
+import GeneratePanel from './components/GeneratePanel.tsx';
 import { useHistory } from './hooks/useHistory.ts';
 import type { Level } from './types/level.ts';
 import type { AssetRecord } from './types/asset.ts';
@@ -85,7 +86,7 @@ export default function App() {
           <LevelEditor level={level} onChange={setLevel} assets={assets} history={history} />
         )}
         {tab === 'Assets' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', height: '100%' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '300px 320px 1fr', height: '100%' }}>
             <div style={{ borderRight: '1px solid #1a2a4a', overflow: 'hidden' }}>
               <AssetBrowser
                 assets={assets}
@@ -96,6 +97,9 @@ export default function App() {
                 onImport={handleImportAssets}
                 onExport={handleExportAssets}
               />
+            </div>
+            <div style={{ borderRight: '1px solid #1a2a4a', overflow: 'auto' }}>
+              <GeneratePanel sourceAsset={selectedAsset} onAssetGenerated={handleAddAsset} />
             </div>
             <div style={{ overflow: 'hidden' }}>
               {selectedAsset ? (
