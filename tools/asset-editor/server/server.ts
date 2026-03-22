@@ -217,7 +217,7 @@ app.get('/api/diagnostics/models', async (_req, res) => {
     const models: Array<Record<string, unknown>> = [];
 
     const pager = await ai.models.list({ config: { pageSize: 100 } });
-    for (const model of pager) {
+    for await (const model of pager) {
       models.push({
         name: model.name,
         displayName: model.displayName,
