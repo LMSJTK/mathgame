@@ -90,6 +90,16 @@ app.patch('/api/assets/:id/state', (req, res) => {
   res.json(updated);
 });
 
+app.post('/api/assets/:id/animations', (req, res) => {
+  const existing = assets.get(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Not found' });
+  const animations = (existing.animations as any[] || []);
+  animations.push(req.body);
+  const updated = { ...existing, animations, updatedAt: new Date().toISOString() };
+  assets.set(req.params.id, updated);
+  res.json(updated);
+});
+
 app.delete('/api/assets/:id', (req, res) => {
   assets.delete(req.params.id);
   res.json({ deleted: true });
