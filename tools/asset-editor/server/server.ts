@@ -177,6 +177,90 @@ app.post('/api/export/manifest', (_req, res) => {
   res.json({ path: 'export/manifest.json', assetCount: manifest.length });
 });
 
+// --- Diagnostics ---
+
+app.get('/api/diagnostics', async (_req, res) => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  const info: Record<string, unknown> = {
+    server: 'mathgame-asset-server',
+    geminiApiKey: apiKey ? `${apiKey.slice(0, 6)}...${apiKey.slice(-4)}` : 'NOT SET',
+    rembgUrl: process.env.REMBG_URL || 'http://rembg:5000 (default)',
+    assetsInMemory: assets.size,
+    spritesDir: 'public/assets/sprites',
+  };
+
+  // Check rembg connectivity
+  try {
+    const rembgRes = await fetch(`${process.env.REMBG_URL || 'http://rembg:5000'}/api/remove`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: new Uint8Array(0),
+      signal: AbortSignal.timeout(3000),
+    });
+    info.rembgStatus = `reachable (${rembgRes.status})`;
+  } catch {
+    info.rembgStatus = 'unreachable';
+  }
+
+  res.json(info);
+});
+
+app.get('/api/diagnostics/models', async (_req, res) => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
+  }
+
+  try {
+    const { GoogleGenAI } = await import('@google/genai');
+    const ai = new GoogleGenAI({ apiKey });
+    const models: Array<Record<string, unknown>> = [];
+
+    const pager = await ai.models.list({ config: { pageSize: 100 } });
+    for (const model of pager) {
+      models.push({
+        name: model.name,
+        displayName: model.displayName,
+        description: model.description,
+        supportedActions: model.supportedGenerationMethods,
+        inputTokenLimit: model.inputTokenLimit,
+        outputTokenLimit: model.outputTokenLimit,
+      });
+    }
+
+    res.json({ count: models.length, models });
+  } catch (err: any) {
+    console.error('ListModels error:', err);
+    res.json({ error: err.message, raw: String(err) });
+  }
+});
+
+app.get('/api/diagnostics/files', async (_req, res) => {
+  const fs = await import('fs');
+  const path = await import('path');
+
+  function listDir(dir: string): string[] {
+    try {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      const results: string[] = [];
+      for (const entry of entries) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          results.push(...listDir(full));
+        } else {
+          results.push(full);
+        }
+      }
+      return results;
+    } catch {
+      return [];
+    }
+  }
+
+  const files = listDir('public/assets/sprites');
+  res.json({ count: files.length, files });
+});
+
 // --- Start ---
 
 app.listen(PORT, () => {

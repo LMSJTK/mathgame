@@ -3,11 +3,12 @@ import LevelEditor from './components/LevelEditor.tsx';
 import AssetBrowser from './components/AssetBrowser.tsx';
 import AssetDetail from './components/AssetDetail.tsx';
 import GeneratePanel from './components/GeneratePanel.tsx';
+import DiagnosticsPanel from './components/DiagnosticsPanel.tsx';
 import { useHistory } from './hooks/useHistory.ts';
 import type { Level } from './types/level.ts';
 import type { AssetRecord } from './types/asset.ts';
 
-const TABS = ['Level Editor', 'Assets'] as const;
+const TABS = ['Level Editor', 'Assets', 'Diagnostics'] as const;
 type Tab = (typeof TABS)[number];
 
 export default function App() {
@@ -110,6 +111,11 @@ export default function App() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+        {tab === 'Diagnostics' && (
+          <div style={{ overflow: 'auto', height: '100%' }}>
+            <DiagnosticsPanel />
           </div>
         )}
       </div>
