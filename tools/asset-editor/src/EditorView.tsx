@@ -9,6 +9,7 @@
  */
 import React, { useState, useCallback } from 'react';
 import PromptPanel from './PromptPanel';
+import VariantPanel from './VariantPanel';
 import AssetBrowser from './AssetBrowser';
 import SpriteCanvas from './SpriteCanvas';
 import MetadataForm from './MetadataForm';
@@ -19,6 +20,7 @@ export default function EditorView() {
   const [currentAsset, setCurrentAsset] = useState<AssetRecord | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [canvasMode, setCanvasMode] = useState<'anchor' | 'collision' | 'nine-slice'>('anchor');
+  const [leftTab, setLeftTab] = useState<'generate' | 'variants'>('generate');
 
   const handleAssetCreated = useCallback(() => {
     setRefreshKey(k => k + 1);
@@ -37,7 +39,25 @@ export default function EditorView() {
     <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr 340px', gap: 16, height: '100vh', padding: 16, background: '#08111f', color: '#eef6ff', fontFamily: 'Inter, system-ui, sans-serif' }}>
       {/* Left column */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflow: 'hidden' }}>
-        <PromptPanel onAssetCreated={handleAssetCreated} />
+        {/* Generate / Variants toggle */}
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button onClick={() => setLeftTab('generate')} style={{
+            flex: 1, padding: '6px 12px', fontSize: 12, cursor: 'pointer',
+            border: leftTab === 'generate' ? '1px solid #6ed4ff' : '1px solid #1a2a4a',
+            borderRadius: 6,
+            background: leftTab === 'generate' ? '#1a3050' : 'transparent',
+            color: leftTab === 'generate' ? '#6ed4ff' : '#9eb8d4',
+          }}>New Asset</button>
+          <button onClick={() => setLeftTab('variants')} style={{
+            flex: 1, padding: '6px 12px', fontSize: 12, cursor: 'pointer',
+            border: leftTab === 'variants' ? '1px solid #6ed4ff' : '1px solid #1a2a4a',
+            borderRadius: 6,
+            background: leftTab === 'variants' ? '#1a3050' : 'transparent',
+            color: leftTab === 'variants' ? '#6ed4ff' : '#9eb8d4',
+          }}>Variants</button>
+        </div>
+        {leftTab === 'generate' && <PromptPanel onAssetCreated={handleAssetCreated} />}
+        {leftTab === 'variants' && <VariantPanel sourceAsset={currentAsset} onVariantCreated={handleAssetCreated} />}
         <AssetBrowser
           refreshKey={refreshKey}
           currentAssetId={currentAsset?.id}
