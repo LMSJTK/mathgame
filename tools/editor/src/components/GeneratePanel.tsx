@@ -98,6 +98,14 @@ export default function GeneratePanel({ sourceAsset, onAssetGenerated }: Props) 
         createdAt: now,
         updatedAt: now,
       };
+
+      // Register with asset-server so variants can find it
+      await fetch(`${ASSET_SERVER}/api/assets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(asset),
+      });
+
       onAssetGenerated(asset);
       setLastResult(`Generated: ${result.imagePath}`);
       setName('');
@@ -148,6 +156,13 @@ export default function GeneratePanel({ sourceAsset, onAssetGenerated }: Props) 
         createdAt: now,
         updatedAt: now,
       };
+      // Register with asset-server
+      await fetch(`${ASSET_SERVER}/api/assets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(asset),
+      });
+
       onAssetGenerated(asset);
       setLastResult(`Variant generated: ${result.imagePath}`);
     } catch (err: any) {

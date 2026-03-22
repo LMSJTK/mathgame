@@ -3,6 +3,16 @@ import type { AssetRecord, AssetCategory, AssetState, AnimationClip } from '../t
 import { ASSET_CATEGORIES, ASSET_STATES, EXPRESSIONS } from '../types/asset.ts';
 import AnimationPreview from './AnimationPreview.tsx';
 
+const ASSET_SERVER = 'http://localhost:4174';
+
+/** Resolve an asset imagePath to a full URL served by the asset-server. */
+function resolveImageUrl(imagePath: string): string {
+  if (!imagePath) return '';
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) return imagePath;
+  // The asset-server serves /assets/* as static files, and imagePath is like "assets/sprites/..."
+  return `${ASSET_SERVER}/${imagePath}`;
+}
+
 interface Props {
   asset: AssetRecord;
   onUpdate: (id: string, patch: Partial<AssetRecord>) => void;
@@ -28,7 +38,14 @@ export default function AssetDetail({ asset, onUpdate }: Props) {
               background: checkerboard(), borderRadius: 4, margin: '0 auto 8px',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               border: '1px solid #1a2a4a', position: 'relative',
+              overflow: 'hidden',
             }}>
+              <img
+                src={resolveImageUrl(asset.imagePath)}
+                alt={asset.name}
+                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
               {/* Anchor point indicator */}
               <div style={{
                 position: 'absolute',
@@ -37,6 +54,7 @@ export default function AssetDetail({ asset, onUpdate }: Props) {
                 width: 8, height: 8, borderRadius: '50%',
                 background: '#ff4444', border: '2px solid white',
                 transform: 'translate(-50%, -50%)',
+                zIndex: 1,
               }} />
             </div>
             <span>{asset.imagePath}</span>
