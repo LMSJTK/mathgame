@@ -24,3 +24,25 @@ services:
     # volumes:
     #   - ./tools/editor:/usr/src/app
     #   - /usr/src/app/node_modules
+
+  asset-server:
+    build: ./tools/asset-editor/server
+    container_name: mathgame-asset-server
+    ports:
+      - "4174:4174"
+    environment:
+      - ASSET_SERVER_PORT=4174
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - REMBG_URL=http://rembg:5000
+    # volumes:
+    #   - ./tools/asset-editor/server:/usr/src/app
+    #   - /usr/src/app/node_modules
+
+  # Optional: Background removal service (rembg)
+  # Uncomment to enable automatic background removal for generated sprites
+  # rembg:
+  #   image: danielgatis/rembg:latest
+  #   container_name: mathgame-rembg
+  #   ports:
+  #     - "5000:5000"
+  #   command: s
